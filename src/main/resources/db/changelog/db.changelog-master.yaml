@@ -5,5 +5,5 @@ databaseChangeLog:
       changes:
         - sql: SELECT 1;
 
-  - include:
-      file: db/changelog/changes/
+  - includeAll:
+      path: "db/changelog/changes/"
