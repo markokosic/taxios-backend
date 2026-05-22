@@ -4,3 +4,6 @@ databaseChangeLog:
       author: init
       changes:
         - sql: SELECT 1;
+
+  - include:
+      file: db/changelog/changes/
