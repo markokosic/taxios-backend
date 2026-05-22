@@ -1,0 +1,344 @@
+databaseChangeLog:
+- changeSet:
+    id: 1779469408380-1
+    author: mkosic (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: cars_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: horsepower
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: license_plate
+            type: VARCHAR(255)
+        - column:
+            name: model
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: tenant_id
+            type: BIGINT
+        - column:
+            name: type
+            type: VARCHAR(255)
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: brand
+            type: VARCHAR(255)
+        tableName: cars
+- changeSet:
+    id: 1779469408380-2
+    author: mkosic (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+            name: config_type
+            type: VARCHAR(31)
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: driver_remuneration_configs_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: is_current_remuneration
+            type: BOOLEAN
+        - column:
+            constraints:
+              nullable: false
+            name: tenant_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: valid_from
+            type: date
+        - column:
+            name: valid_until
+            type: date
+        - column:
+            constraints:
+              nullable: false
+            name: driver_id
+            type: BIGINT
+        - column:
+            name: driver_revenue_share_percentage
+            type: numeric(10, 2)
+        - column:
+            name: driver_min_payout
+            type: numeric(10, 2)
+        - column:
+            name: weekly_company_settlement
+            type: numeric(10, 2)
+        - column:
+            name: settlement_day
+            type: INTEGER
+        tableName: driver_remuneration_configs
+- changeSet:
+    id: 1779469408380-3
+    author: mkosic (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: drivers_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: email
+            type: VARCHAR(255)
+        - column:
+            name: first_name
+            type: VARCHAR(255)
+        - column:
+            name: last_name
+            type: VARCHAR(255)
+        - column:
+            name: phone
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: tenant_id
+            type: BIGINT
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        tableName: drivers
+- changeSet:
+    id: 1779469408380-4
+    author: mkosic (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: tenants_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: name
+            type: VARCHAR(255)
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        tableName: tenants
+- changeSet:
+    id: 1779469408380-5
+    author: mkosic (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: name
+        constraintName: uk4moql6miwoh3w0drxa2gmjbll
+        tableName: tenants
+- changeSet:
+    id: 1779469408380-6
+    author: mkosic (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: daily_revenue_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: date
+            type: date
+        - column:
+            constraints:
+              nullable: false
+            name: kilometers_driven
+            type: numeric(38, 2)
+        - column:
+            constraints:
+              nullable: false
+            name: revenue
+            type: numeric(38, 2)
+        - column:
+            constraints:
+              nullable: false
+            name: tenant_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: driver_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: company_remuneration
+            type: numeric(38, 2)
+        - column:
+            constraints:
+              nullable: false
+            name: driver_remuneration
+            type: numeric(38, 2)
+        - column:
+            constraints:
+              nullable: false
+            name: remuneration_version_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: car_id
+            type: BIGINT
+        tableName: daily_revenue
+- changeSet:
+    id: 1779469408380-7
+    author: mkosic (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: users_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: email
+            type: VARCHAR(255)
+        - column:
+            name: first_name
+            type: VARCHAR(255)
+        - column:
+            name: last_name
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: password
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: tenant_id
+            type: BIGINT
+        tableName: users
+- changeSet:
+    id: 1779469408380-8
+    author: mkosic (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: car_id
+        baseTableName: daily_revenue
+        constraintName: fk_daily_revenue_car
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: cars
+        validate: true
+- changeSet:
+    id: 1779469408380-9
+    author: mkosic (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: remuneration_version_id
+        baseTableName: daily_revenue
+        constraintName: fkaae13vnpqiuangj8po5ikwffp
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: driver_remuneration_configs
+        validate: true
+- changeSet:
+    id: 1779469408380-10
+    author: mkosic (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: driver_id
+        baseTableName: driver_remuneration_configs
+        constraintName: fkai4f7uy56hf0ugwmye11q038i
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: drivers
+        validate: true
+- changeSet:
+    id: 1779469408380-11
+    author: mkosic (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: driver_id
+        baseTableName: daily_revenue
+        constraintName: fkloxnjnlacr8rvskai8jqkdkpa
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: drivers
+        validate: true
+
