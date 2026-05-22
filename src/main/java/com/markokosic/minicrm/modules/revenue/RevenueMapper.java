@@ -12,9 +12,9 @@ import java.math.BigDecimal;
 public interface RevenueMapper {
 
 //	@Mapping(target = "driver", expression = "java(driverRepository.getReferenceById(dto.driverId()))")
-	@Mapping(target = "tenantId", expression = "java(tenantId)")
 	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "driver", source = "driver")
+	@Mapping(target = "tenantId", expression = "java(tenantId)")
+	@Mapping(target = "car", source = "car")
 	@Mapping(target = "remunerationConfig", source = "remunerationConfig")
 	@Mapping(target= "companyRemuneration", source="companyRemuneration")
 	@Mapping(target= "driverRemuneration", source="driverRemuneration")
@@ -22,6 +22,7 @@ public interface RevenueMapper {
 			CreateDailyRevenueRequestDTO dto,
 			@Context Long tenantId,
 			Driver driver,
+			com.markokosic.minicrm.modules.car.model.Car car,
 			DriverRemunerationConfig remunerationConfig,
 			BigDecimal companyRemuneration,
 			BigDecimal driverRemuneration

@@ -19,12 +19,12 @@ public record CreatePercentageShareRemunerationConfigDTO(
 
 	@JsonFormat(shape = JsonFormat.Shape.NUMBER)
 	@PositiveOrZero(message = "{driver.dailyMinPayout.invalid}")
-	Integer minPayout,
+	Integer minDriverPayout,
 
 	@JsonFormat(shape = JsonFormat.Shape.NUMBER)
-	@DecimalMin(value = "0.0", inclusive = false, message = "{driver.percentage.invalid}")
-	@DecimalMax(value = "100.0", message = "{driver.percentage.invalid}")
-	BigDecimal percentage
+	@DecimalMin(value = "0.0", inclusive = false, message = "{driver.driverRevenueSharePercentage.invalid}")
+	@DecimalMax(value = "100.0", message = "{driver.driverRevenueSharePercentage.invalid}")
+	BigDecimal driverRevenueSharePercentage
 
 ) implements CreateRemunerationRequestDTO {
 }

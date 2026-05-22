@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+//TODO 1. Logout fn and remove cookies, 2. if token expired remove cookies
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -88,7 +90,7 @@ public class AuthService {
         User user = optionalUser.get();
 
         try {
-            Authentication authentication = authenticationManager.authenticate(
+             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
 

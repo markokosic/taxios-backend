@@ -1,0 +1,28 @@
+### Global Variables
+@host = http://localhost:8080
+@api = /api/reports/revenue
+
+### 0. Login (to get accessToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "max@mustermann.de",
+  "password": "securePassword123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+%}
+
+### 1. Get Revenue Report (No grouping - RAW)
+GET {{host}}{{api}}?dateFrom=2025-01-01&dateTo=2025-12-31&groupBy=NONE
+Cookie: accessToken={{accessToken}}
+
+### 2. Get Revenue Report (Grouped by DAY)
+GET {{host}}{{api}}?dateFrom=2025-05-01&dateTo=2025-05-31&groupBy=DAY
+Cookie: accessToken={{accessToken}}
+
+### 3. Get Revenue Report (Filtered by Driver)
+GET {{host}}{{api}}?dateFrom=2025-01-01&dateTo=2025-12-31&driverId=3&groupBy=NONE
+Cookie: accessToken={{accessToken}}

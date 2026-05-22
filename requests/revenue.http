@@ -1,0 +1,88 @@
+### Global Variables
+@host = http://localhost:8080
+@api = /api/revenues
+
+### 0. Login (to get accessToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "max@mustermann.de",
+  "password": "securePassword123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+%}
+
+### 1. Create Daily Percentage Share Revenue
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "driverId": 3,
+  "carId": 1,
+  "date": "2026-03-26",
+  "kilometersDriven": 150,
+  "revenue": 450
+}
+
+
+
+### Create Daily WEEKLY_FIXED_RATE without SETTLEMENT Revenue
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "driverId": 10,
+  "carId": 1,
+  "date": "2026-03-26",
+  "kilometersDriven": 150,
+  "revenue": 350
+}
+
+### Create Daily WEEKLY_FIXED_RATE WITH SETTLEMENT Revenue
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "driverId": 10,
+  "carId": 1,
+  "date": "2026-03-26",
+  "kilometersDriven": 150,
+  "revenue": 350,
+  "companyRemuneration": 600
+}
+
+### 2. Create Daily Revenues Bulk (Covers all use cases)
+POST {{host}}{{api}}/bulk
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+[
+  {
+    "driverId": 3,
+    "carId": 1,
+    "date": "2026-03-27",
+    "kilometersDriven": 150.0,
+    "revenue": 450.00
+  },
+  {
+    "driverId": 10,
+    "carId": 1,
+    "date": "2026-03-27",
+    "kilometersDriven": 120.0,
+    "revenue": 380.00
+  },
+  {
+    "driverId": 10,
+    "carId": 1,
+    "date": "2026-03-26",
+    "kilometersDriven": 180.0,
+    "revenue": 550.00,
+    "companyRemuneration": 600.00
+  }
+]

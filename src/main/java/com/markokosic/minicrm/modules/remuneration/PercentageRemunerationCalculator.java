@@ -14,7 +14,7 @@ public non-sealed class PercentageRemunerationCalculator implements IRemuneratio
 
 		//  (Revenue * Percent) / 100
 		BigDecimal driverShare = revenue
-				.multiply(pc.getRevenueSharePercentage())
+				.multiply(pc.getDriverRevenueSharePercentage())
 				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
 		// driver will always receive a payment even on bad days

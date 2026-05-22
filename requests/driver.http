@@ -1,0 +1,73 @@
+### Global Variables
+@host = http://localhost:8080
+@api = /api/drivers
+
+### 0. Login (to get accessToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "max@mustermann.de",
+  "password": "securePassword123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+%}
+
+### 1. Create a new Driver with PERCENTAGE_SHARE CONFIG
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "+43 664 1234567",
+  "remunerationConfig": {
+    "remunerationModelType": "PERCENTAGE_SHARE",
+    "minDriverPayout": "60",
+    "driverRevenueSharePercentage": "60"
+  }
+}
+
+### Create a new Driver with WEEKLY_FIXED_RATE CONFIG
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "firstName": "John",
+  "lastName": "Weekly",
+  "email": "john.doe@example.com",
+  "phone": "+43 664 1234567",
+  "remunerationConfig": {
+    "remunerationModelType": "WEEKLY_FIXED_RATE",
+    "weeklyFixedCompanySettlement": "600",
+    "settlementDay": 3
+  }
+}
+
+### 2. Get All Drivers (Paginated)
+GET {{host}}{{api}}?page=0&size=10
+Cookie: accessToken={{accessToken}}
+
+### 3. Get Driver by ID
+# Replace '1' with a valid driver ID from the response of #2
+GET {{host}}{{api}}/1
+Cookie: accessToken={{accessToken}}
+
+### 4. Update Driver
+PATCH {{host}}{{api}}/1
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "firstName": "John Updated",
+  "phone": "+43 664 9999999"
+}
+
+### 5. Delete Driver
+DELETE {{host}}{{api}}/1
+Cookie: accessToken={{accessToken}}

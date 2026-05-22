@@ -1,0 +1,51 @@
+### Global Variables
+@host = http://localhost:8080
+@api = /api/cars
+
+### 0. Login (to get accessToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "max@mustermann.de",
+  "password": "securePassword123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+%}
+
+### 1. Create a new car
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "licensePlate": "W-12345AB",
+  "model": "Golf VIII",
+  "brand": "VW",
+  "horsepower": "150"
+}
+
+### 2. Get all cars
+GET {{host}}{{api}}
+Cookie: accessToken={{accessToken}}
+
+### 3. Get car by ID
+GET {{host}}{{api}}/1
+Cookie: accessToken={{accessToken}}
+
+### 4. Update car
+PATCH {{host}}{{api}}/1
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "model": "Golf GTI",
+  "brand": "VW",
+  "horsepower": "245"
+}
+
+### 5. Delete car
+DELETE {{host}}{{api}}/1
+Cookie: accessToken={{accessToken}}

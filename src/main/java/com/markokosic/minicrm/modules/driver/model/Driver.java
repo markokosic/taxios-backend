@@ -38,6 +38,7 @@ public class Driver {
 	@Column(name="phone")
 	private String phone;
 
+
 	@OneToMany(
 			mappedBy = "driver",
 			cascade = CascadeType.ALL,
@@ -45,13 +46,14 @@ public class Driver {
 	)
 	private List<DriverRemunerationConfig> remunerationConfigs = new ArrayList<>();
 
+
 	public void activateNewRemuneration(DriverRemunerationConfig newConfig) {
 		LocalDate today = LocalDate.now();
 
 		this.remunerationConfigs.stream()
-//				.filter(DriverRemunerationConfig::isIsCurrent)
+			.filter(DriverRemunerationConfig::isCurrent)
 				.forEach(config -> {
-					config.deactivate(today.minusDays(1));
+					config.deactivate(today);
 				});
 
 		newConfig.activate(today);
@@ -80,6 +82,13 @@ public class Driver {
 	@Column(name="status", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private DriverStatus status;
+
+	public DriverRemunerationConfig getCurrentRemunerationConfig() {
+		return this.remunerationConfigs.stream()
+				.filter(DriverRemunerationConfig::isCurrent)
+				.findFirst()
+				.orElse(null);
+	}
 
 	@PrePersist
 	protected void onCreate() {

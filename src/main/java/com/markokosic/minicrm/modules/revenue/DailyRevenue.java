@@ -1,7 +1,9 @@
 package com.markokosic.minicrm.modules.revenue;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
+import com.markokosic.minicrm.modules.tenant.Tenant;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -26,15 +28,16 @@ public class DailyRevenue {
 	@NotNull
 	private Long tenantId;
 
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "driver_id", nullable = false)
 	private Driver driver;
 
-	@Column(name="licence_plate", nullable = false)
-	private String licencePlate;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "car_id", nullable = false)
+	private com.markokosic.minicrm.modules.car.model.Car car;
 
 	@Column(name="date", nullable = false)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate date;
 
 	@Column(name="kilometers_driven", nullable = false)

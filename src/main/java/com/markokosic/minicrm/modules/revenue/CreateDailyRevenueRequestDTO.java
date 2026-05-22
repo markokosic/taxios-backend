@@ -12,7 +12,7 @@ public record CreateDailyRevenueRequestDTO(
 		Long driverId,
 
 		@NotNull
-		String licencePlate,
+		Long carId,
 
 		@NotNull
 		@PastOrPresent
@@ -23,8 +23,9 @@ public record CreateDailyRevenueRequestDTO(
 		BigDecimal kilometersDriven,
 
 		@NotNull
-		BigDecimal revenue
+		BigDecimal revenue,
 
+		BigDecimal companyRemuneration
 
 ) {
 }

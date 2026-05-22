@@ -6,8 +6,10 @@ import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {RemunerationConfigMapper.class})
 public interface DriverMapper {
+
+	@Mapping(target = "currentRemunerationConfig", source = "currentRemunerationConfig")
 	DriverResponseDTO toDto(Driver driver);
 
 	@Mapping(target = "tenantId", expression = "java(tenantId)")
@@ -18,6 +20,7 @@ public interface DriverMapper {
 	Driver toEntity(CreateDriverRequestDTO dto, @Context Long tenantId);
 
 	@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+	@Mapping(target ="remunerationConfigs", ignore = true)
 	void updateEntityFromDto(UpdateDriverRequestDTO dto, @MappingTarget Driver driver);
 
 }

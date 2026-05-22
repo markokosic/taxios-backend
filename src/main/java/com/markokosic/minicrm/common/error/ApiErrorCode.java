@@ -33,6 +33,10 @@ public enum ApiErrorCode {
 	Driver_NOT_FOUND("driver.not-found","Driver not found"),
 
 
+	//Car Errors
+	CAR_NOT_FOUND("car.not-found","Car not found"),
+
+
 	//Address Errors
 	ADDRESS_NOT_FOUND("address.not-found","Address not found");
 

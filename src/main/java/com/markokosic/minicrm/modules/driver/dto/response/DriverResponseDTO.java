@@ -26,8 +26,8 @@ public record DriverResponseDTO(
 		@Schema(description = "Current employment status")
 		DriverStatus status,
 
-//		@Schema(description = "Selected remuneration model")
-//		RemunerationModel remunerationModel,
+		@Schema(description = "Current remuneration configuration")
+		RemunerationConfigResponseDTO currentRemunerationConfig,
 
 		@Schema(description = "Timestamp when the driver was created")
 		LocalDateTime createdAt,
