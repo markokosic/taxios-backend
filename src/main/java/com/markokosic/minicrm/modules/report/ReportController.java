@@ -31,7 +31,6 @@ public class ReportController {
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
 			LocalDate dateTo,
 			@RequestParam (required = false) Long driverId,
-//			@RequestParam (required = false) long vehicleId,
 			@RequestParam (required = false) GroupBy groupBy
 	) {
 		RevenueReportResponseDTO revenueReport = reportService.generateRevenueReport(dateFrom, dateTo, driverId, groupBy);

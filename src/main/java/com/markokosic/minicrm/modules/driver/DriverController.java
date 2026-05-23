@@ -6,6 +6,7 @@ import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
+import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.service.DriverService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/drivers")
@@ -36,6 +39,13 @@ public class DriverController {
 		DriverResponseDTO driver = driverService.getDriverById(id);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, driver, i18n.getMessage("success.fetched")));
 	};
+
+	@GetMapping("/select")
+	public ResponseEntity<ApiResponseDTO<List<DriverSelectDTO>>> getAllDriversForSelect() {
+		List<DriverSelectDTO> drivers = driverService.getAllDriversForSelect();
+		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, drivers, i18n.getMessage("success.fetched")));
+
+	}
 
 
 	@GetMapping

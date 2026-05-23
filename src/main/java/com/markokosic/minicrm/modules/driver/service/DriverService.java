@@ -9,6 +9,7 @@ import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
+import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.DriverStatus;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -58,9 +61,14 @@ public class DriverService {
 	@Transactional(readOnly = true)
 	public  DriverResponseDTO getDriverById(Long id ) {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(id);
-
-
 		return driverMapper.toDto(driver);
+	}
+
+	@Transactional(readOnly = true)
+	public List<DriverSelectDTO> getAllDriversForSelect() {
+		Long tenantId = tenantService.getTenantIdFromContextHolder();
+
+		return driverRepository.findAllDriversForSelectByTenant(tenantId);
 	}
 
 	@Transactional
