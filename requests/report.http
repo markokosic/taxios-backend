@@ -26,3 +26,11 @@ Cookie: accessToken={{accessToken}}
 ### 3. Get Revenue Report (Filtered by Driver)
 GET {{host}}{{api}}?dateFrom=2025-01-01&dateTo=2025-12-31&driverId=3&groupBy=NONE
 Cookie: accessToken={{accessToken}}
+
+### 4. Get Dashboard Report (Yearly)
+GET {{host}}/api/reports/dashboard?year=2025
+Cookie: accessToken={{accessToken}}
+
+### 5. Get Dashboard Report (Monthly)
+GET {{host}}/api/reports/dashboard?year=2025&month=5
+Cookie: accessToken={{accessToken}}

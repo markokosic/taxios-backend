@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record RevenueReportSummaryDTO(
 		BigDecimal revenue,
 		BigDecimal companyShare,
+		BigDecimal driverShare,
 		BigDecimal totalKm,
 		Integer entryCount
 ) {}

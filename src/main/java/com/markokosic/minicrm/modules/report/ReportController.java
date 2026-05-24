@@ -35,14 +35,15 @@ public class ReportController {
 	) {
 		RevenueReportResponseDTO revenueReport = reportService.generateRevenueReport(dateFrom, dateTo, driverId, groupBy);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, revenueReport, i18n.getMessage("success.fetched")));
+	}
 
-
-		//dateFrom, dateTo, -> holt alle Einträge von daily_revenues im Datumsbereich
-		//dateFrom, dateTo, groupBy = DAY, MONTH, YEAR, -> alle Einträge im Datumsbereich UND DAY: alle Einträge vom Tag (N), ODER MONTH: aggregierte Einträge pro Tag (max. 31), ODER YEAR: aggregierte Einträge pro Monat (12)
-		//dateFrom, dateTo, driverId, groupBy = NONE, DAY, MONTH, YEAR, -> alle Einträge im Datumsbereich, aggregiert wie oben, bei NONE einfach alle Einträge
-		//dateFrom, dateTo, vehicleId, groupBy = NONE, DAY, MONTH, YEAR,
-		//jeder Report gibt aber noch folgendes mit: groupedBy, totalRevenue, totalCompanyShare, totalKm, entryCount, entries (kann man besseres Vokabel für finden)
-		//jeder entry? hat  driverName, driverId, vehicleModel, vehicleLicencePlate, revenue, companyShare, km, datum
+	@GetMapping("/dashboard")
+	public ResponseEntity<ApiResponseDTO<DashboardReportDTO>> getDashboardReport(
+			@RequestParam int year,
+			@RequestParam(required = false) Integer month
+	) {
+		DashboardReportDTO dashboardReport = reportService.generateDashboardReport(year, month);
+		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, dashboardReport, i18n.getMessage("success.fetched")));
 	}
 
 }

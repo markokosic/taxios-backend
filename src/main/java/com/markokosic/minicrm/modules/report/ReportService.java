@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,6 +26,53 @@ public class ReportService {
 
     private final DailyRevenueRepository dailyRevenueRepository;
     private final TenantService tenantService;
+
+    @Transactional(readOnly = true)
+    public DashboardReportDTO generateDashboardReport(int year, Integer month) {
+        Long tenantId = tenantService.getTenantIdFromContextHolder();
+        LocalDate dateFrom;
+        LocalDate dateTo;
+
+        if (month != null) {
+            YearMonth yearMonth = YearMonth.of(year, month);
+            dateFrom = yearMonth.atDay(1);
+            dateTo = yearMonth.atEndOfMonth();
+        } else {
+            dateFrom = LocalDate.of(year, 1, 1);
+            dateTo = LocalDate.of(year, 12, 31);
+        }
+
+        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, tenantId, null);
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal totalCompany = BigDecimal.ZERO;
+        BigDecimal totalDriver = BigDecimal.ZERO;
+        BigDecimal totalKm = BigDecimal.ZERO;
+        long tripCount = rawRevenues.size();
+
+        for (DailyRevenue dr : rawRevenues) {
+            totalRevenue = totalRevenue.add(dr.getRevenue());
+            totalCompany = totalCompany.add(dr.getCompanyRemuneration());
+            totalDriver = totalDriver.add(dr.getDriverRemuneration());
+            totalKm = totalKm.add(dr.getKilometersDriven());
+        }
+
+        BigDecimal revenuePerKm = BigDecimal.ZERO;
+        if (totalKm.compareTo(BigDecimal.ZERO) > 0) {
+            revenuePerKm = totalRevenue.divide(totalKm, 2, RoundingMode.HALF_UP);
+        }
+
+        return new DashboardReportDTO(
+                year,
+                month,
+                totalRevenue,
+                totalCompany,
+                totalDriver,
+                totalKm,
+                revenuePerKm,
+                tripCount
+        );
+    }
 
     @Transactional(readOnly = true)
     public RevenueReportResponseDTO generateRevenueReport(
@@ -121,16 +170,18 @@ public class ReportService {
     private RevenueReportSummaryDTO calculateRevenueReportTotals(List<RevenueReportEntryDTO> rows) {
         return rows.stream()
                 .reduce(
-                        new RevenueReportSummaryDTO(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0),
+                        new RevenueReportSummaryDTO(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0),
                         (summary, row) -> new RevenueReportSummaryDTO(
                                 summary.revenue().add(row.revenue()),
                                 summary.companyShare().add(row.companyRemuneration()),
+                                summary.driverShare().add(row.driverRemuneration()),
                                 summary.totalKm().add(row.kilometersDriven()),
                                 summary.entryCount() + row.entryCount().intValue()
                         ),
                         (s1, s2) -> new RevenueReportSummaryDTO(
                                 s1.revenue().add(s2.revenue()),
                                 s1.companyShare().add(s2.companyShare()),
+                                s1.driverShare().add(s2.driverShare()),
                                 s1.totalKm().add(s2.totalKm()),
                                 s1.entryCount() + s2.entryCount()
                         )
