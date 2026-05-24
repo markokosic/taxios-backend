@@ -6,6 +6,7 @@ public enum ApiErrorCode {
 	AUTH_TOKEN_EXPIRED("auth.token.expired", "Token has expired"),
 	AUTH_REGISTRATION_FAILED("auth.registration.failed", "Registration failed"),
 	AUTH_NO_TOKEN_RECEIVED("auth.token.no-token-received", "No token received, please login again."),
+	AUTH_ERROR("auth", "ERROR"),
 
 	// Validation Errors
 	VALIDATION_FIELD_BLANK("validation.field-blank", "Field cannot be blank"),

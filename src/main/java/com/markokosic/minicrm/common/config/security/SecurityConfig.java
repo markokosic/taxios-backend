@@ -28,26 +28,26 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
-   
+    @Autowired
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
 
-
-	@Bean
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(customizer -> customizer.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
-                        //ALLOW ALL PREFLIGHTS? - research more on this topic
-//                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "/error").permitAll()
                         .anyRequest().authenticated()).
-        sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            //TODO ADD CUSTOM AuthenticationEntryPoint
-//                .exceptionHandling((exception) -> exception.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
+                sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                )
                 .build();
     }
+
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {

@@ -47,7 +47,7 @@ public class AuthController {
         ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", authResponse.getAccessToken())
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("None")
+                .sameSite("Lax")
                 .maxAge(tokenProperties.getAccess().getExpirationMinutes() * 60)
                 .path("/")
                 .build();
@@ -55,7 +55,7 @@ public class AuthController {
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("None")
+                .sameSite("Lax")
                 .maxAge(tokenProperties.getRefresh().getExpirationMinutes()*60)
                 .path("/")
                 .build();
@@ -77,7 +77,7 @@ public class AuthController {
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
                     .httpOnly(true)
                     .secure(true)
-                    .sameSite("None")
+                    .sameSite("Lax")
                     .maxAge(tokenProperties.getAccess().getExpirationMinutes() * 60)
                     .path("/")
                     .build();
@@ -93,7 +93,7 @@ public class AuthController {
             ResponseCookie clearAccessToken = ResponseCookie.from("accessToken", "")
                     .httpOnly(true)
                     .secure(true)
-                    .sameSite("None")
+                    .sameSite("Lax")
                     .path("/")
                     .maxAge(0)
                     .build();

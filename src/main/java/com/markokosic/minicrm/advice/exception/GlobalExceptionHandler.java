@@ -44,8 +44,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponseDTO> handleOtherExceptions(ApiException ex) {
-		return buildError(ex.getErrorCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+	public ResponseEntity<ErrorResponseDTO> handleOtherExceptions(Exception ex) {
+		return buildError(ApiErrorCode.AUTH_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	private ResponseEntity<ErrorResponseDTO> buildError(ApiErrorCode code, HttpStatusCode status) {
