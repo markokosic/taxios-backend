@@ -7,3 +7,7 @@ databaseChangeLog:
 
   - includeAll:
       path: "db/changelog/changes/"
+
+
+
+#   mvn liquibase:generateChangeLog   -Dliquibase.url=jdbc:postgresql://localhost:5432/taxi_controlling_db   -Dliquibase.username=marko   -Dliquibase.password=admin   -Dliquibase.outputChangeLogFile=src/main/resources/db/changelog/changes/02-test.yaml

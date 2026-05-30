@@ -18,11 +18,11 @@ public class PercentageShareRemunerationConfig extends DriverRemunerationConfig 
 
 	@DecimalMin(value = "0.0", inclusive = false, message = "{driver.driverRevenueSharePercentage.invalid}")
 	@DecimalMax(value = "100.0", message = "{driver.driverRevenueSharePercentage.invalid}")
-	@Column(name="driver_revenue_share_percentage",precision = 10, scale = 2)
+	@Column(name="driver_revenue_share_percentage", precision = 19, scale = 2)
 	private BigDecimal driverRevenueSharePercentage;
 
 	@DecimalMin(value = "0.0", message = "{driver.minDriverPayout.negative}")
-	@Column(name="driver_min_payout", precision = 10, scale = 2)
+	@Column(name="driver_min_payout", precision = 19, scale = 2)
 	private BigDecimal minDriverPayout;
 
 

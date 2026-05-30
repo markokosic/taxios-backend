@@ -28,6 +28,17 @@ public class DailyRevenue {
 	@NotNull
 	private Long tenantId;
 
+	@Column(name= "revenue_type", nullable = false)
+	@NotNull
+	@Enumerated(EnumType.STRING)
+	private RevenueType revenueType;
+
+	@Column(name = "trip_count")
+	private Long tripCount;
+
+	@Column(name = "price_per_trip",  precision = 19, scale = 2)
+	private BigDecimal pricePerTrip;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "driver_id", nullable = false)
 	private Driver driver;
@@ -40,16 +51,22 @@ public class DailyRevenue {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate date;
 
-	@Column(name="kilometers_driven", nullable = false)
+	@Column(name="kilometers_driven", precision = 10, scale = 3)
 	private BigDecimal kilometersDriven;
 
-	@Column(name="revenue", nullable = false)
+	@Column(name="kilometers_from", nullable = false, precision = 10, scale = 3)
+	private BigDecimal kilometersFrom;
+
+	@Column(name="kilometers_to", nullable = false, precision = 10, scale = 3)
+	private BigDecimal kilometersTo;
+
+	@Column(name="revenue", nullable = false,  precision = 19, scale = 2)
 	private BigDecimal revenue;
 
-	@Column(name="companyRemuneration", nullable = false)
+	@Column(name="companyRemuneration", nullable = false,  precision = 19, scale = 2)
 	private BigDecimal companyRemuneration;
 
-	@Column(name="driverRemuneration", nullable = false)
+	@Column(name="driverRemuneration", nullable = false,  precision = 19, scale = 2)
 	private BigDecimal driverRemuneration;
 
 	@ManyToOne(fetch = FetchType.LAZY)
