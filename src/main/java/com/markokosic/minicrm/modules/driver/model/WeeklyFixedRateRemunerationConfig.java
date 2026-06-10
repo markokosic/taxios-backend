@@ -1,5 +1,8 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
+import com.markokosic.minicrm.modules.remuneration.WeeklyFixedRateRemunerationCalculator;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -23,6 +26,16 @@ public class WeeklyFixedRateRemunerationConfig extends DriverRemunerationConfig 
 	@Max(7)
 	@Column(name = "settlement_day")
 	private Integer settlementDay;
+
+	@Override
+	public RemunerationModelType getType() {
+		return RemunerationModelType.WEEKLY_FIXED_RATE;
+	}
+
+	@Override
+	public RemunerationSplit calculateRemuneration(BigDecimal revenue) {
+		return new WeeklyFixedRateRemunerationCalculator().calculateRemuneration(revenue, this);
+	}
 
 
 }

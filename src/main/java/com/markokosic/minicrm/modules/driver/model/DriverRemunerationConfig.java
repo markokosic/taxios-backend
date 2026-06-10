@@ -1,9 +1,12 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -33,6 +36,10 @@ public abstract class DriverRemunerationConfig {
 
 	@Column(name = "valid_until")
 	private LocalDate validUntil;
+
+	public abstract RemunerationModelType getType();
+
+	public abstract RemunerationSplit calculateRemuneration(BigDecimal revenue);
 
 	public void activate(LocalDate from) {
 		this.current = true;

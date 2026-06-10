@@ -15,7 +15,7 @@ Content-Type: application/json
     client.global.set("accessToken", response.body.data.accessToken);
 %}
 
-### 1. Create Daily Percentage Share Revenue
+### 1. Create Daily Percentage Share Revenue (Manual)
 POST {{host}}{{api}}
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}
@@ -24,13 +24,16 @@ Cookie: accessToken={{accessToken}}
   "driverId": 3,
   "carId": 1,
   "date": "2026-03-26",
-  "kilometersDriven": 150,
-  "revenue": 450
+  "kilometersDriven": 150.0,
+  "kilometersFrom": 1000.0,
+  "kilometersTo": 1150.0,
+  "revenueType": "MANUAL_DAILY_REVENUE",
+  "drivenFrom": "08:00:00",
+  "drivenTo": "17:00:00",
+  "revenue": 450.0
 }
 
-
-
-### Create Daily WEEKLY_FIXED_RATE without SETTLEMENT Revenue
+### 2. Create Daily WEEKLY_FIXED_RATE without SETTLEMENT Revenue
 POST {{host}}{{api}}
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}
@@ -39,11 +42,16 @@ Cookie: accessToken={{accessToken}}
   "driverId": 10,
   "carId": 1,
   "date": "2026-03-26",
-  "kilometersDriven": 150,
-  "revenue": 350
+  "kilometersDriven": 150.0,
+  "kilometersFrom": 2000.0,
+  "kilometersTo": 2150.0,
+  "revenueType": "MANUAL_DAILY_REVENUE",
+  "drivenFrom": "09:00:00",
+  "drivenTo": "18:00:00",
+  "revenue": 350.0
 }
 
-### Create Daily WEEKLY_FIXED_RATE WITH SETTLEMENT Revenue
+### 3. Create Daily WEEKLY_FIXED_RATE WITH SETTLEMENT Revenue
 POST {{host}}{{api}}
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}
@@ -52,12 +60,38 @@ Cookie: accessToken={{accessToken}}
   "driverId": 10,
   "carId": 1,
   "date": "2026-03-26",
-  "kilometersDriven": 150,
-  "revenue": 350,
-  "companyRemuneration": 600
+  "kilometersDriven": 150.0,
+  "kilometersFrom": 2150.0,
+  "kilometersTo": 2300.0,
+  "revenueType": "MANUAL_DAILY_REVENUE",
+  "drivenFrom": "09:00:00",
+  "drivenTo": "18:00:00",
+  "revenue": 350.0,
+  "companyRemuneration": 600.0
 }
 
-### 2. Create Daily Revenues Bulk (Covers all use cases)
+### 4. Create FLAT_RATE_TRIP (Pauschalfahrt) Revenue
+# Driver 12 should have a FLAT_RATE remuneration config active (e.g. flatRateFee = 80.00)
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "driverId": 12,
+  "carId": 1,
+  "date": "2026-03-26",
+  "kilometersDriven": 80.0,
+  "kilometersFrom": 3000.0,
+  "kilometersTo": 3080.0,
+  "revenueType": "FLAT_RATE_TRIP",
+  "drivenFrom": "10:00:00",
+  "drivenTo": "12:00:00",
+  "tripCount": 10,
+  "pricePerTrip": 100.0,
+  "revenue": 1000.0
+}
+
+### 5. Create Daily Revenues Bulk (Covers multiple use cases)
 POST {{host}}{{api}}/bulk
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}
@@ -68,21 +102,37 @@ Cookie: accessToken={{accessToken}}
     "carId": 1,
     "date": "2026-03-27",
     "kilometersDriven": 150.0,
-    "revenue": 450.00
+    "kilometersFrom": 1150.0,
+    "kilometersTo": 1300.0,
+    "revenueType": "MANUAL_DAILY_REVENUE",
+    "drivenFrom": "08:00:00",
+    "drivenTo": "17:00:00",
+    "revenue": 450.0
   },
   {
     "driverId": 10,
     "carId": 1,
     "date": "2026-03-27",
     "kilometersDriven": 120.0,
-    "revenue": 380.00
+    "kilometersFrom": 2300.0,
+    "kilometersTo": 2420.0,
+    "revenueType": "MANUAL_DAILY_REVENUE",
+    "drivenFrom": "09:00:00",
+    "drivenTo": "18:00:00",
+    "revenue": 380.0
   },
   {
-    "driverId": 10,
+    "driverId": 12,
     "carId": 1,
-    "date": "2026-03-26",
-    "kilometersDriven": 180.0,
-    "revenue": 550.00,
-    "companyRemuneration": 600.00
+    "date": "2026-03-27",
+    "kilometersDriven": 50.0,
+    "kilometersFrom": 3080.0,
+    "kilometersTo": 3130.0,
+    "revenueType": "FLAT_RATE_TRIP",
+    "drivenFrom": "13:00:00",
+    "drivenTo": "14:30:00",
+    "tripCount": 1,
+    "pricePerTrip": 100.0,
+    "revenue": 1000.0
   }
 ]

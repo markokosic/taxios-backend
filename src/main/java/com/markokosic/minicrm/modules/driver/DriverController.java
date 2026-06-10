@@ -69,7 +69,17 @@ public class DriverController {
 	) {
 		driverService.deleteDriver(id);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
-	}}
+	}
+
+	@DeleteMapping("/{id}/remuneration-configs/{configId}")
+	public ResponseEntity<ApiResponseDTO<Void>> stopRemunerationConfig(
+			@PathVariable Long id,
+			@PathVariable Long configId
+	) {
+		driverService.stopRemunerationConfig(id, configId);
+		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
+	}
+}
 
 //@PostMapping(/{id}/remuneration-configs)
 //public ResponseEntity<ApiResponseDTO<DriverResponseDTO>> createDriver(@Valid @RequestBody CreateDriverRequestDTO request){

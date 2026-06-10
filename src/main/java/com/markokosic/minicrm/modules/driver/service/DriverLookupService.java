@@ -20,11 +20,11 @@ public class DriverLookupService {
 
 	public Driver validateDriverExistsOrThrow(Long id) {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
-		return driverRepository.findByIdAndTenantId(id, tenantId).orElseThrow(() -> new NotFoundException(ApiErrorCode.Driver_NOT_FOUND));
+		return driverRepository.findByIdAndTenantId(id, tenantId).orElseThrow(() -> new NotFoundException(ApiErrorCode.DRIVER_NOT_FOUND));
 	}
 
 	public List<Driver> validateAllExistOrThrow(Set<Long> ids){
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
-		return driverRepository.findAllByTenantIdAndIdIn(tenantId, ids).orElseThrow(() -> new NotFoundException(ApiErrorCode.Driver_NOT_FOUND));
+		return driverRepository.findAllByTenantIdAndIdIn(tenantId, ids).orElseThrow(() -> new NotFoundException(ApiErrorCode.DRIVER_NOT_FOUND));
 	}
 }

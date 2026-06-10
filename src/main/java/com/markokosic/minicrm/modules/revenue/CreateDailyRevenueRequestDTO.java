@@ -25,6 +25,23 @@ public record CreateDailyRevenueRequestDTO(
 		@NotNull
 		BigDecimal revenue,
 
+		@NotNull
+		BigDecimal kilometersFrom,
+
+		@NotNull
+		BigDecimal kilometersTo,
+
+		@NotNull
+		RevenueType revenueType,
+
+		java.time.LocalTime drivenFrom,
+
+		java.time.LocalTime drivenTo,
+
+		Long tripCount,
+
+		BigDecimal pricePerTrip,
+
 		BigDecimal companyRemuneration
 
 ) {
