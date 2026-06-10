@@ -13,9 +13,10 @@ import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 )
 @JsonSubTypes({
 		@JsonSubTypes.Type(value = CreatePercentageShareRemunerationConfigDTO.class, name = "PERCENTAGE_SHARE"),
-		@JsonSubTypes.Type(value = CreateWeeklyFixedRemunerationConfigDTO.class, name = "WEEKLY_FIXED_RATE")
+		@JsonSubTypes.Type(value = CreateWeeklyFixedRemunerationConfigDTO.class, name = "WEEKLY_FIXED_RATE"),
+		@JsonSubTypes.Type(value = CreateFlatRateRemunerationConfigDTO.class, name = "FLAT_RATE")
 })
 public sealed interface CreateRemunerationRequestDTO
-		permits CreatePercentageShareRemunerationConfigDTO, CreateWeeklyFixedRemunerationConfigDTO {
+		permits CreatePercentageShareRemunerationConfigDTO, CreateWeeklyFixedRemunerationConfigDTO, CreateFlatRateRemunerationConfigDTO {
 	RemunerationModelType remunerationModelType();
 }

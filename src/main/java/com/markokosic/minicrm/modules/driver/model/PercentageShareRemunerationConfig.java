@@ -1,5 +1,8 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.remuneration.PercentageRemunerationCalculator;
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -24,6 +27,16 @@ public class PercentageShareRemunerationConfig extends DriverRemunerationConfig 
 	@DecimalMin(value = "0.0", message = "{driver.minDriverPayout.negative}")
 	@Column(name="driver_min_payout", precision = 19, scale = 2)
 	private BigDecimal minDriverPayout;
+
+	@Override
+	public RemunerationModelType getType() {
+		return RemunerationModelType.PERCENTAGE_SHARE;
+	}
+
+	@Override
+	public RemunerationSplit calculateRemuneration(BigDecimal revenue) {
+		return new PercentageRemunerationCalculator().calculateRemuneration(revenue, this);
+	}
 
 
 }

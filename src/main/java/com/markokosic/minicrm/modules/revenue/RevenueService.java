@@ -36,10 +36,18 @@ public class RevenueService {
 		com.markokosic.minicrm.modules.car.model.Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
 				.orElseThrow(() -> new com.markokosic.minicrm.exception.NotFoundException(com.markokosic.minicrm.common.error.ApiErrorCode.CAR_NOT_FOUND));
 
-		DriverRemunerationConfig currentConfig = driver.getRemunerationConfigs().stream()
-				.filter(DriverRemunerationConfig::isCurrent)
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("No current remuneration config found"));
+		DriverRemunerationConfig currentConfig;
+		if (request.revenueType() == RevenueType.FLAT_RATE_TRIP) {
+			currentConfig = driver.getActiveFlatRateRemunerationConfig();
+			if (currentConfig == null) {
+				throw new IllegalStateException("No active flat-rate remuneration config found for driver: " + driver.getId());
+			}
+		} else {
+			currentConfig = driver.getActivePrimaryRemunerationConfig();
+			if (currentConfig == null) {
+				throw new IllegalStateException("No active primary remuneration config found for driver: " + driver.getId());
+			}
+		}
 
 
 		RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(request.revenue(), currentConfig, request.companyRemuneration());
@@ -79,10 +87,18 @@ public class RevenueService {
 						throw new com.markokosic.minicrm.exception.NotFoundException(com.markokosic.minicrm.common.error.ApiErrorCode.CAR_NOT_FOUND);
 					}
 
-					DriverRemunerationConfig currentConfig = driver.getRemunerationConfigs().stream()
-							.filter(DriverRemunerationConfig::isCurrent)
-							.findFirst()
-							.orElseThrow(() -> new IllegalStateException("No current remuneration config found for driver: " + dto.driverId()));
+					DriverRemunerationConfig currentConfig;
+					if (dto.revenueType() == RevenueType.FLAT_RATE_TRIP) {
+						currentConfig = driver.getActiveFlatRateRemunerationConfig();
+						if (currentConfig == null) {
+							throw new IllegalStateException("No active flat-rate remuneration config found for driver: " + dto.driverId());
+						}
+					} else {
+						currentConfig = driver.getActivePrimaryRemunerationConfig();
+						if (currentConfig == null) {
+							throw new IllegalStateException("No active primary remuneration config found for driver: " + dto.driverId());
+						}
+					}
 
 					RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(
 							dto.revenue(), currentConfig, dto.companyRemuneration());

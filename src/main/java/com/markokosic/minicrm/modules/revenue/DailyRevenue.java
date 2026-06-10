@@ -73,4 +73,10 @@ public class DailyRevenue {
 	@JoinColumn(name = "remuneration_version_id", nullable = false)
 	private DriverRemunerationConfig remunerationConfig;
 
+	@Column(name="driven_from")
+	private java.time.LocalTime drivenFrom;
+
+	@Column(name="driven_to")
+	private java.time.LocalTime drivenTo;
+
 }

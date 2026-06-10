@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.common.error.ApiErrorCode;
 import com.markokosic.minicrm.exception.NotFoundException;
+import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
@@ -40,17 +41,25 @@ public class DriverService {
 	public DriverResponseDTO createDriver(CreateDriverRequestDTO request ) {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
 		Driver driver = driverMapper.toEntity(request, tenantId);
-		DriverRemunerationConfig config = remunerationConfigMapper.toEntity(
-				request.remunerationConfig(),
-				tenantId,
-				driver
-		);
 
-		driver.initializeWithRemuneration(config);
+		List<DriverRemunerationConfig> configs = request.remunerationConfigs().stream()
+				.map(config -> remunerationConfigMapper.toEntity(config, tenantId, driver))
+				.toList();
+
+		boolean hasDuplicates = configs.size() != configs.stream()
+				.map(DriverRemunerationConfig::getType)
+				.distinct()
+				.count();
+
+		if (hasDuplicates) {
+			throw new ValidationException(ApiErrorCode.DRIVER_MULTIPLE_CONFIGURATIONS);
+		}
+
+		driver.initializeWithRemunerationConfigs(configs);
 
 		driverRepository.save(driver);
 
-		return driverMapper.toDto(driver);
+		return driverMapper.toDto(driver, remunerationConfigMapper);
 	}
 
 	@Transactional(readOnly = true)
@@ -61,7 +70,7 @@ public class DriverService {
 	@Transactional(readOnly = true)
 	public  DriverResponseDTO getDriverById(Long id ) {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(id);
-		return driverMapper.toDto(driver);
+		return driverMapper.toDto(driver, remunerationConfigMapper);
 	}
 
 	@Transactional(readOnly = true)
@@ -79,17 +88,25 @@ public class DriverService {
 
 		driverMapper.updateEntityFromDto(request, driver);
 
-		if(request.remunerationConfig() != null){
-			DriverRemunerationConfig config = remunerationConfigMapper.toEntity(
-					request.remunerationConfig(),
-					tenantId,
-					driver
-			);
-			driver.activateNewRemuneration(config);
+		if (request.remunerationConfigs() != null && !request.remunerationConfigs().isEmpty()) {
+			List<DriverRemunerationConfig> configs = request.remunerationConfigs().stream()
+					.map(config -> remunerationConfigMapper.toEntity(config, tenantId, driver))
+					.toList();
+
+			boolean hasDuplicates = configs.size() != configs.stream()
+					.map(DriverRemunerationConfig::getType)
+					.distinct()
+					.count();
+
+			if (hasDuplicates) {
+				throw new ValidationException(ApiErrorCode.DRIVER_MULTIPLE_CONFIGURATIONS);
+			}
+
+			driver.replaceRemunerationConfigs(configs);
 		}
 
 		driverRepository.save(driver);
-		return driverMapper.toDto(driver);
+		return driverMapper.toDto(driver, remunerationConfigMapper);
 
 	}
 
@@ -99,12 +116,19 @@ public class DriverService {
 		customer.setStatus(DriverStatus.DELETED);
 	}
 
+	@Transactional
+	public void stopRemunerationConfig(Long driverId, Long configId) {
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
+		driver.deactivateConfig(configId);
+		driverRepository.save(driver);
+	}
+
 
 	private Driver validateDriverDeletion(Long id) {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(id);
 
 		if (DriverStatus.DELETED.equals(driver.getStatus())) {
-			throw new NotFoundException(ApiErrorCode.Driver_NOT_FOUND);
+			throw new NotFoundException(ApiErrorCode.DRIVER_NOT_FOUND);
 		}
 
 //		if (hasActiveOrders(driver.getId())) {
@@ -118,7 +142,8 @@ public class DriverService {
 
 	private PageResponseDTO<DriverResponseDTO> getDriversByTenant(Pageable pageable) {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
-		Page<DriverResponseDTO> page = driverRepository.findAllByTenantIdAndStatus(tenantId, DriverStatus.ACTIVE, pageable).map(driverMapper::toDto);
+		Page<DriverResponseDTO> page = driverRepository.findAllByTenantIdAndStatus(tenantId, DriverStatus.ACTIVE, pageable)
+				.map(driver -> driverMapper.toDto(driver, remunerationConfigMapper));
 		return PageResponseDTO.from(page);
 	}
 

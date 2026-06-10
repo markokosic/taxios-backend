@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: extend-remuneration-configs-and-revenues-flatrate
+      author: mkosic (generated)
+      changes:
+        - addColumn:
+            tableName: driver_remuneration_configs
+            columns:
+              - column:
+                  name: flat_rate_fee
+                  type: numeric(19, 2)
+
+        - addColumn:
+            tableName: daily_revenue
+            columns:
+              - column:
+                  name: revenue_type
+                  type: VARCHAR(255)
+              - column:
+                  name: trip_count
+                  type: BIGINT
+              - column:
+                  name: price_per_trip
+                  type: numeric(19, 2)
+              - column:
+                  name: kilometers_from
+                  type: numeric(10, 3)
+              - column:
+                  name: kilometers_to
+                  type: numeric(10, 3)
+
+        - addColumn:
+            tableName: daily_revenue
+            columns:
+              - column:
+                  name: driven_from
+                  type: TIME WITHOUT TIME ZONE
+              - column:
+                  name: driven_to
+                  type: TIME WITHOUT TIME ZONE

@@ -31,7 +31,8 @@ public enum ApiErrorCode {
 	CUSTOMER_NOT_FOUND("customer.not-found","Customer not found"),
 
 	//Driver Errors
-	Driver_NOT_FOUND("driver.not-found","Driver not found"),
+	DRIVER_NOT_FOUND("driver.not-found","Driver not found"),
+	DRIVER_MULTIPLE_CONFIGURATIONS("driver.multiple-configurations", "Multiple driver configurations of the same type are not allowed"),
 
 
 	//Car Errors

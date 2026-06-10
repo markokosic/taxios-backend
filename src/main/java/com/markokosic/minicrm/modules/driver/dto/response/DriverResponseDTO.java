@@ -4,6 +4,7 @@ package com.markokosic.minicrm.modules.driver.dto.response;
 import com.markokosic.minicrm.modules.driver.model.DriverStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "Response object representing a driver in the system")
 public record DriverResponseDTO(
@@ -27,7 +28,7 @@ public record DriverResponseDTO(
 		DriverStatus status,
 
 		@Schema(description = "Current remuneration configuration")
-		RemunerationConfigResponseDTO currentRemunerationConfig,
+		List<RemunerationConfigResponseDTO> currentRemunerationConfigs,
 
 		@Schema(description = "Timestamp when the driver was created")
 		LocalDateTime createdAt,
