@@ -2,6 +2,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-1
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          tableExists:
+            tableName: cars
     changes:
     - createTable:
         columns:
@@ -52,6 +57,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-2
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          tableExists:
+            tableName: driver_remuneration_configs
     changes:
     - createTable:
         columns:
@@ -107,6 +117,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-3
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          tableExists:
+            tableName: drivers
     changes:
     - createTable:
         columns:
@@ -152,6 +167,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-4
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          tableExists:
+            tableName: tenants
     changes:
     - createTable:
         columns:
@@ -180,6 +200,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-5
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          indexExists:
+            indexName: uk4moql6miwoh3w0drxa2gmjbll
     changes:
     - addUniqueConstraint:
         columnNames: name
@@ -188,6 +213,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-6
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          tableExists:
+            tableName: daily_revenue
     changes:
     - createTable:
         columns:
@@ -248,6 +278,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-7
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          tableExists:
+            tableName: users
     changes:
     - createTable:
         columns:
@@ -284,6 +319,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-8
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fk_daily_revenue_car
     changes:
     - addForeignKeyConstraint:
         baseColumnNames: car_id
@@ -299,6 +339,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-9
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fkaae13vnpqiuangj8po5ikwffp
     changes:
     - addForeignKeyConstraint:
         baseColumnNames: remuneration_version_id
@@ -314,6 +359,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-10
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fkai4f7uy56hf0ugwmye11q038i
     changes:
     - addForeignKeyConstraint:
         baseColumnNames: driver_id
@@ -329,6 +379,11 @@ databaseChangeLog:
 - changeSet:
     id: 1779469408380-11
     author: mkosic (generated)
+    preConditions:
+      - onFail: MARK_RAN
+      - not:
+          foreignKeyConstraintExists:
+            foreignKeyName: fkloxnjnlacr8rvskai8jqkdkpa
     changes:
     - addForeignKeyConstraint:
         baseColumnNames: driver_id

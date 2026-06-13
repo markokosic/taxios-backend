@@ -8,6 +8,7 @@ import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
@@ -88,13 +89,9 @@ public class DriverService {
 
 		driverMapper.updateEntityFromDto(request, driver);
 
-		if (request.remunerationConfigs() != null && !request.remunerationConfigs().isEmpty()) {
-			List<DriverRemunerationConfig> configs = request.remunerationConfigs().stream()
-					.map(config -> remunerationConfigMapper.toEntity(config, tenantId, driver))
-					.toList();
-
-			boolean hasDuplicates = configs.size() != configs.stream()
-					.map(DriverRemunerationConfig::getType)
+		if (request.remunerationConfigs() != null) {
+			boolean hasDuplicates = request.remunerationConfigs().size() != request.remunerationConfigs().stream()
+					.map(CreateRemunerationRequestDTO::remunerationModelType)
 					.distinct()
 					.count();
 
@@ -102,7 +99,10 @@ public class DriverService {
 				throw new ValidationException(ApiErrorCode.DRIVER_MULTIPLE_CONFIGURATIONS);
 			}
 
-			driver.replaceRemunerationConfigs(configs);
+			driver.syncRemunerationConfigs(
+					request.remunerationConfigs(),
+					dto -> remunerationConfigMapper.toEntity(dto, tenantId, driver)
+			);
 		}
 
 		driverRepository.save(driver);

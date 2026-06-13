@@ -1,5 +1,7 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -8,8 +10,9 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -45,24 +48,46 @@ public class Driver {
 	)
 	private List<DriverRemunerationConfig> remunerationConfigs = new ArrayList<>();
 
-	public void replaceRemunerationConfigs(List<DriverRemunerationConfig> newConfigs) {
-		if (newConfigs == null || newConfigs.isEmpty()) {
-			throw new IllegalArgumentException("remuneration configs cannot be empty");
-		}
-
+	public void syncRemunerationConfigs(
+			List<CreateRemunerationRequestDTO> requests,
+			Function<CreateRemunerationRequestDTO, DriverRemunerationConfig> mapper
+	) {
 		LocalDate today = LocalDate.now();
+		LocalDate yesterday = today.minusDays(1);
 
-		for (DriverRemunerationConfig newConfig : newConfigs) {
-			// 1. Deactivate current configs of the same type
-			this.remunerationConfigs.stream()
-					.filter(c -> c.isCurrent() && c.getType() == newConfig.getType())
-					.forEach(c -> c.deactivate(today.minusDays(1)));
+		// get current active configs by type
+		Map<RemunerationModelType, DriverRemunerationConfig> currentActiveMap = this.remunerationConfigs.stream()
+				.filter(DriverRemunerationConfig::isCurrent)
+				.collect(Collectors.toMap(DriverRemunerationConfig::getType, c -> c));
 
-			// 2. Activate and add new config
-			newConfig.activate(today);
-			newConfig.setDriver(this);
-			this.remunerationConfigs.add(newConfig);
+		Set<RemunerationModelType> typesInRequest = new HashSet<>();
+
+		for (CreateRemunerationRequestDTO request : requests) {
+			RemunerationModelType type = request.remunerationModelType();
+			typesInRequest.add(type);
+
+			DriverRemunerationConfig existing = currentActiveMap.get(type);
+
+			if (existing != null) {
+				if (!existing.isIdenticalTo(request)) {
+					existing.deactivate(yesterday);
+					DriverRemunerationConfig newConfig = mapper.apply(request);
+					newConfig.activate(today);
+					newConfig.setDriver(this);
+					this.remunerationConfigs.add(newConfig);
+				}
+			} else {
+				DriverRemunerationConfig newConfig = mapper.apply(request);
+				newConfig.activate(today);
+				newConfig.setDriver(this);
+				this.remunerationConfigs.add(newConfig);
+			}
 		}
+
+		//deactivate any types that were not in the request - basically delete a remuneration config.
+		currentActiveMap.values().stream()
+				.filter(c -> !typesInRequest.contains(c.getType()))
+				.forEach(c -> c.deactivate(yesterday));
 	}
 
 	public void initializeWithRemunerationConfigs(List<DriverRemunerationConfig> newConfigs) {
@@ -85,20 +110,20 @@ public class Driver {
 				.orElse(null);
 	}
 
-	public java.util.Optional<DriverRemunerationConfig> getCurrentRemunerationConfigByType(com.markokosic.minicrm.modules.remuneration.RemunerationModelType type) {
+	public Optional<DriverRemunerationConfig> getCurrentRemunerationConfigByType(RemunerationModelType type) {
 		return this.remunerationConfigs.stream()
 				.filter(c -> c.isCurrent() && c.getType() == type)
 				.findFirst();
 	}
 
 	public DriverRemunerationConfig getActiveFlatRateRemunerationConfig() {
-		return getCurrentRemunerationConfigByType(com.markokosic.minicrm.modules.remuneration.RemunerationModelType.FLAT_RATE)
+		return getCurrentRemunerationConfigByType(RemunerationModelType.FLAT_RATE)
 				.orElse(null);
 	}
 
 	public DriverRemunerationConfig getActivePrimaryRemunerationConfig() {
 		return this.remunerationConfigs.stream()
-				.filter(c -> c.isCurrent() && c.getType() != com.markokosic.minicrm.modules.remuneration.RemunerationModelType.FLAT_RATE)
+				.filter(c -> c.isCurrent() && c.getType() != RemunerationModelType.FLAT_RATE)
 				.findFirst()
 				.orElse(getCurrentRemunerationConfig());
 	}

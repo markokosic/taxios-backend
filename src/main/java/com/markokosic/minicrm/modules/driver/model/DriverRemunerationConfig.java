@@ -1,5 +1,6 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import jakarta.persistence.*;
@@ -39,7 +40,15 @@ public abstract class DriverRemunerationConfig {
 
 	public abstract RemunerationModelType getType();
 
+	public abstract boolean isIdenticalTo(CreateRemunerationRequestDTO dto);
+
 	public abstract RemunerationSplit calculateRemuneration(BigDecimal revenue);
+
+	protected boolean areEqual(BigDecimal a, BigDecimal b) {
+		if (a == null && b == null) return true;
+		if (a == null || b == null) return false;
+		return a.compareTo(b) == 0;
+	}
 
 	public void activate(LocalDate from) {
 		this.current = true;

@@ -1,5 +1,7 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.CreateWeeklyFixedRemunerationConfigDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import com.markokosic.minicrm.modules.remuneration.WeeklyFixedRateRemunerationCalculator;
@@ -12,6 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -31,6 +34,16 @@ public class WeeklyFixedRateRemunerationConfig extends DriverRemunerationConfig 
 	public RemunerationModelType getType() {
 		return RemunerationModelType.WEEKLY_FIXED_RATE;
 	}
+
+	@Override
+	public boolean isIdenticalTo(CreateRemunerationRequestDTO dto) {
+		if (!(dto instanceof CreateWeeklyFixedRemunerationConfigDTO wDto)) {
+			return false;
+		}
+		return areEqual(this.weeklyFixedCompanySettlement, wDto.weeklyFixedCompanySettlement())
+				&& java.util.Objects.equals(this.settlementDay, wDto.settlementDay());
+	}
+
 
 	@Override
 	public RemunerationSplit calculateRemuneration(BigDecimal revenue) {

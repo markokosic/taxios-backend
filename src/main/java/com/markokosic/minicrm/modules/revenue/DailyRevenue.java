@@ -12,6 +12,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -73,10 +74,10 @@ public class DailyRevenue {
 	@JoinColumn(name = "remuneration_version_id", nullable = false)
 	private DriverRemunerationConfig remunerationConfig;
 
-	@Column(name="driven_from")
-	private java.time.LocalTime drivenFrom;
+	@Column(name = "driven_from")
+	private LocalTime drivingStartTime;
 
-	@Column(name="driven_to")
-	private java.time.LocalTime drivenTo;
+	@Column(name = "driven_to")
+	private LocalTime drivingEndTime;
 
 }

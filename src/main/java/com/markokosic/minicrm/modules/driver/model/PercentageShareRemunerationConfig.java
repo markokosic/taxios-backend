@@ -1,5 +1,7 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.driver.dto.request.CreatePercentageShareRemunerationConfigDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.PercentageRemunerationCalculator;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
@@ -12,6 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -32,6 +35,16 @@ public class PercentageShareRemunerationConfig extends DriverRemunerationConfig 
 	public RemunerationModelType getType() {
 		return RemunerationModelType.PERCENTAGE_SHARE;
 	}
+
+	@Override
+	public boolean isIdenticalTo(CreateRemunerationRequestDTO dto) {
+		if (!(dto instanceof CreatePercentageShareRemunerationConfigDTO pDto)) {
+			return false;
+		}
+		return areEqual(this.driverRevenueSharePercentage, pDto.driverRevenueSharePercentage())
+				&& areEqual(this.minDriverPayout, pDto.minDriverPayout());
+	}
+
 
 	@Override
 	public RemunerationSplit calculateRemuneration(BigDecimal revenue) {

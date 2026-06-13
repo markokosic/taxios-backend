@@ -1,7 +1,13 @@
 databaseChangeLog:
   - changeSet:
-      id: extend-remuneration-configs-and-revenues-flatrate
+      id: extend-remuneration-configs-flatrate
       author: mkosic (generated)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: driver_remuneration_configs
+              columnName: flat_rate_fee
       changes:
         - addColumn:
             tableName: driver_remuneration_configs
@@ -10,6 +16,16 @@ databaseChangeLog:
                   name: flat_rate_fee
                   type: numeric(19, 2)
 
+  - changeSet:
+      id: extend-revenues-flatrate
+      author: mkosic (generated)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: daily_revenue
+              columnName: kilometers_from
+      changes:
         - addColumn:
             tableName: daily_revenue
             columns:
@@ -28,7 +44,6 @@ databaseChangeLog:
               - column:
                   name: kilometers_to
                   type: numeric(10, 3)
-
         - addColumn:
             tableName: daily_revenue
             columns:

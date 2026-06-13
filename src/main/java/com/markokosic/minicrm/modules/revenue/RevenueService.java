@@ -1,5 +1,9 @@
 package com.markokosic.minicrm.modules.revenue;
 
+import com.markokosic.minicrm.common.error.ApiErrorCode;
+import com.markokosic.minicrm.exception.NotFoundException;
+import com.markokosic.minicrm.modules.car.CarRepository;
+import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
@@ -26,15 +30,15 @@ public class RevenueService {
 	private final TenantService tenantService;
 	private final DriverRepository driverRepository;
 	private final RemunerationService remunerationService;
-	private final com.markokosic.minicrm.modules.car.CarRepository carRepository;
+	private final CarRepository carRepository;
 
 	@Transactional
 	public void createDailyRevenue(CreateDailyRevenueRequestDTO request){
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(request.driverId());
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
 
-		com.markokosic.minicrm.modules.car.model.Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
-				.orElseThrow(() -> new com.markokosic.minicrm.exception.NotFoundException(com.markokosic.minicrm.common.error.ApiErrorCode.CAR_NOT_FOUND));
+		Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
+				.orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
 
 		DriverRemunerationConfig currentConfig;
 		if (request.revenueType() == RevenueType.FLAT_RATE_TRIP) {
@@ -70,10 +74,10 @@ public class RevenueService {
 				.collect(Collectors.toMap(Driver::getId, d -> d));
 
 		Set<Long> carIds = request.stream().map(CreateDailyRevenueRequestDTO::carId).collect(Collectors.toSet());
-		List<com.markokosic.minicrm.modules.car.model.Car> cars = carRepository.findAllById(carIds);
-		Map<Long, com.markokosic.minicrm.modules.car.model.Car> carsMap = cars.stream()
+		List<Car> cars = carRepository.findAllById(carIds);
+		Map<Long, Car> carsMap = cars.stream()
 				.filter(c -> c.getTenantId().equals(tenantId))
-				.collect(Collectors.toMap(com.markokosic.minicrm.modules.car.model.Car::getId, c -> c));
+				.collect(Collectors.toMap(Car::getId, c -> c));
 
 		List<DailyRevenue> dailyRevenues = request.stream()
 				.map(dto -> {
@@ -82,9 +86,9 @@ public class RevenueService {
 						throw new IllegalStateException("Driver not found in map: " + dto.driverId());
 					}
 
-					com.markokosic.minicrm.modules.car.model.Car car = carsMap.get(dto.carId());
+					Car car = carsMap.get(dto.carId());
 					if (car == null) {
-						throw new com.markokosic.minicrm.exception.NotFoundException(com.markokosic.minicrm.common.error.ApiErrorCode.CAR_NOT_FOUND);
+						throw new NotFoundException(ApiErrorCode.CAR_NOT_FOUND);
 					}
 
 					DriverRemunerationConfig currentConfig;
