@@ -15,6 +15,12 @@ Content-Type: application/json
     client.global.set("accessToken", response.body.data.accessToken);
 %}
 
+
+### GET ALL REVENUES
+GET {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
 ### 1. Create Daily Percentage Share Revenue (Manual)
 POST {{host}}{{api}}
 Content-Type: application/json
@@ -90,6 +96,8 @@ Cookie: accessToken={{accessToken}}
   "pricePerTrip": 100.0,
   "revenue": 1000.0
 }
+
+
 
 ### 5. Create Daily Revenues Bulk (Covers multiple use cases)
 POST {{host}}{{api}}/bulk

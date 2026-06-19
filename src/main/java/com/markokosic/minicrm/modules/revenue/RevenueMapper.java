@@ -27,4 +27,9 @@ public interface RevenueMapper {
 			BigDecimal companyRemuneration,
 			BigDecimal driverRemuneration
 	);
+
+	@Mapping(source = "driver.firstName", target = "driverFirstName")
+	@Mapping(source = "driver.lastName", target = "driverLastName")
+	@Mapping(source = "remunerationConfig.type", target = "remunerationModelType")
+	DailyRevenueResponseDTO toDto(DailyRevenue entity);
 }

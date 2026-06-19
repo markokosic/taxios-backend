@@ -2,22 +2,22 @@ databaseChangeLog:
   - changeSet:
       id: backfill-production-data-flatrate
       author: mkosic (generated)
-      preConditions:
-        - onFail: MARK_RAN
-        - columnExists:
-            tableName: daily_revenue
-            columnName: revenue_type
+#      preConditions:
+#        - onFail: MARK_RAN
+#        - columnExists:
+#            tableName: daily_revenue
+#            columnName: revenue_type
       changes:
-        - sql:
-            dbms: postgresql
-            sql: "UPDATE daily_revenue SET revenue_type = 'MANUAL_DAILY_REVENUE' WHERE revenue_type IS NULL;"
+#        - sql:
+#            dbms: postgresql
+#            sql: "UPDATE daily_revenue SET revenue_type = 'MANUAL_DAILY_REVENUE' WHERE revenue_type IS NULL;"
         - sql:
             dbms: postgresql
             sql: "UPDATE daily_revenue SET kilometers_from = 0.0, kilometers_to = kilometers_driven WHERE kilometers_from IS NULL;"
-        - addNotNullConstraint:
-            tableName: daily_revenue
-            columnName: revenue_type
-            columnDataType: VARCHAR(255)
+#        - addNotNullConstraint:
+#            tableName: daily_revenue
+#            columnName: revenue_type
+#            columnDataType: VARCHAR(255)
         - addNotNullConstraint:
             tableName: daily_revenue
             columnName: kilometers_from

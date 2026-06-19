@@ -15,12 +15,7 @@ import java.math.BigDecimal;
 public class RemunerationService {
 
 
-	public RemunerationSplit calculateRemunerationSplitFromDailyRevenue(BigDecimal dailyRevenue, DriverRemunerationConfig config, BigDecimal manualCompanyRemuneration) {
-
-		if (manualCompanyRemuneration != null) {
-			BigDecimal driverShare = dailyRevenue.subtract(manualCompanyRemuneration);
-			return new RemunerationSplit(manualCompanyRemuneration, driverShare);
-		}
+	public RemunerationSplit calculateRemunerationSplitFromDailyRevenue(BigDecimal dailyRevenue, DriverRemunerationConfig config) {
 
 		return config.calculateRemuneration(dailyRevenue);
 

@@ -29,9 +29,9 @@ databaseChangeLog:
         - addColumn:
             tableName: daily_revenue
             columns:
-              - column:
-                  name: revenue_type
-                  type: VARCHAR(255)
+#              - column:
+#                  name: revenue_type
+#                  type: VARCHAR(255)
               - column:
                   name: trip_count
                   type: BIGINT

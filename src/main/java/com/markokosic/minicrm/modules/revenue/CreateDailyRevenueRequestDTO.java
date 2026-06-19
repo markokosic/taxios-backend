@@ -1,5 +1,8 @@
 package com.markokosic.minicrm.modules.revenue;
 
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
@@ -32,7 +35,8 @@ public record CreateDailyRevenueRequestDTO(
 		BigDecimal kilometersTo,
 
 		@NotNull
-		RevenueType revenueType,
+		@Enumerated(EnumType.STRING)
+		RemunerationModelType driverRemunerationType,
 
 		java.time.LocalTime drivenFrom,
 

@@ -110,22 +110,11 @@ public class Driver {
 				.orElse(null);
 	}
 
-	public Optional<DriverRemunerationConfig> getCurrentRemunerationConfigByType(RemunerationModelType type) {
+	public DriverRemunerationConfig getCurrentRemunerationConfigByType(RemunerationModelType type) {
 		return this.remunerationConfigs.stream()
 				.filter(c -> c.isCurrent() && c.getType() == type)
-				.findFirst();
-	}
-
-	public DriverRemunerationConfig getActiveFlatRateRemunerationConfig() {
-		return getCurrentRemunerationConfigByType(RemunerationModelType.FLAT_RATE)
-				.orElse(null);
-	}
-
-	public DriverRemunerationConfig getActivePrimaryRemunerationConfig() {
-		return this.remunerationConfigs.stream()
-				.filter(c -> c.isCurrent() && c.getType() != RemunerationModelType.FLAT_RATE)
 				.findFirst()
-				.orElse(getCurrentRemunerationConfig());
+				.orElseThrow(() -> new IllegalStateException("Driver has no configuration of type: " + type));
 	}
 
 	public void deactivateConfig(Long configId) {
