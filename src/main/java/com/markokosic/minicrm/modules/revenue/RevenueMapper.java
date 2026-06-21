@@ -18,6 +18,8 @@ public interface RevenueMapper {
 	@Mapping(target = "remunerationConfig", source = "remunerationConfig")
 	@Mapping(target= "companyRemuneration", source="companyRemuneration")
 	@Mapping(target= "driverRemuneration", source="driverRemuneration")
+	@Mapping(target= "drivingStartTime", source="dto.drivingStartTime")
+	@Mapping(target= "drivingEndTime", source="dto.drivingEndTime")
 	DailyRevenue toEntity(
 			CreateDailyRevenueRequestDTO dto,
 			@Context Long tenantId,
@@ -30,6 +32,7 @@ public interface RevenueMapper {
 
 	@Mapping(source = "driver.firstName", target = "driverFirstName")
 	@Mapping(source = "driver.lastName", target = "driverLastName")
+	@Mapping(source = "car.licensePlate", target = "licensePlate")
 	@Mapping(source = "remunerationConfig.type", target = "remunerationModelType")
 	DailyRevenueResponseDTO toDto(DailyRevenue entity);
 }

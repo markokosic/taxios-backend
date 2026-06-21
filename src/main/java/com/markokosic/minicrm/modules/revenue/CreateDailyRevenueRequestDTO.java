@@ -1,5 +1,6 @@
 package com.markokosic.minicrm.modules.revenue;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -38,14 +39,14 @@ public record CreateDailyRevenueRequestDTO(
 		@Enumerated(EnumType.STRING)
 		RemunerationModelType driverRemunerationType,
 
-		java.time.LocalTime drivenFrom,
+		@JsonFormat(pattern = "HH:mm")
+		java.time.LocalTime drivingStartTime,
 
-		java.time.LocalTime drivenTo,
+		@JsonFormat(pattern = "HH:mm")
+		java.time.LocalTime drivingEndTime,
 
 		Long tripCount,
-
 		BigDecimal pricePerTrip,
-
 		BigDecimal companyRemuneration
 
 ) {

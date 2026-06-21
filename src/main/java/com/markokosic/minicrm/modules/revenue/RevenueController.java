@@ -38,7 +38,7 @@ public class RevenueController {
 	};
 
 	@GetMapping
-	public ResponseEntity<ApiResponseDTO<PageResponseDTO<DailyRevenueResponseDTO>>> getAllDailyRevenues(@PageableDefault(sort={"date"}, direction = Sort.Direction.DESC) Pageable pageable){
+	public ResponseEntity<ApiResponseDTO<PageResponseDTO<DailyRevenueResponseDTO>>> getAllDailyRevenues(@PageableDefault(sort = {"date", "drivingStartTime"}, direction = Sort.Direction.DESC) Pageable pageable){
 		PageResponseDTO<DailyRevenueResponseDTO> revenues = revenueService.getAllRevenues(pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, revenues, i18n.getMessage("success.fetched")));
 	}

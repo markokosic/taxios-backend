@@ -14,6 +14,7 @@ public record DailyRevenueResponseDTO(
 		BigDecimal pricePerTrip,
 		String driverFirstName,
 		String driverLastName,
+		String licensePlate,
 		BigDecimal kilometersDriven,
 		BigDecimal kilometersFrom,
 		BigDecimal kilometersTo,
