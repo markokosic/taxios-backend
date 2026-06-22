@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -118,5 +119,33 @@ public class RevenueService {
 		dailyRevenueRepository.saveAll(dailyRevenues);
 	}
 
+	@Transactional
+	public DailyRevenueResponseDTO updateDailyRevenue(Long id, CreateDailyRevenueRequestDTO request) {
+		Long tenantId = tenantService.getTenantIdFromContextHolder();
+		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
+				.orElseThrow(() -> new NotFoundException(ApiErrorCode.REVENUE_NOT_FOUND));
+
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(request.driverId());
+		if (!driver.getTenantId().equals(tenantId)) {
+			throw new NotFoundException(ApiErrorCode.DRIVER_NOT_FOUND);
+		}
+
+		Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
+				.orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
+
+		DriverRemunerationConfig currentConfig = driver.getCurrentRemunerationConfigByType(request.driverRemunerationType());
+		if (currentConfig == null) {
+			throw new IllegalStateException("No remuneration config found for driver of type: " + request.driverRemunerationType());
+		}
+
+		RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(
+				request.revenue(), currentConfig);
+
+		revenueMapper.updateEntityFromDto(request, dailyRevenue, driver, car, currentConfig,
+				remunerationSplit.companyRemuneration(), remunerationSplit.driverRemuneration());
+
+		dailyRevenueRepository.save(dailyRevenue);
+		return revenueMapper.toDto(dailyRevenue);
+	}
 
 }

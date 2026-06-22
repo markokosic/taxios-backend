@@ -38,6 +38,8 @@ public enum ApiErrorCode {
 	//Car Errors
 	CAR_NOT_FOUND("car.not-found","Car not found"),
 
+	//Revenue Errors
+	REVENUE_NOT_FOUND("revenue.not-found","Daily revenue not found"),
 
 	//Address Errors
 	ADDRESS_NOT_FOUND("address.not-found","Address not found");

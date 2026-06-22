@@ -1,5 +1,7 @@
 package com.markokosic.minicrm.modules.revenue;
 
+import com.markokosic.minicrm.modules.car.dto.response.CarSummaryDTO;
+import com.markokosic.minicrm.modules.driver.dto.response.DriverSummaryDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 
 import java.math.BigDecimal;
@@ -12,9 +14,10 @@ public record DailyRevenueResponseDTO(
 		RemunerationModelType remunerationModelType,
 		Long tripCount,
 		BigDecimal pricePerTrip,
-		String driverFirstName,
-		String driverLastName,
-		String licensePlate,
+
+		DriverSummaryDTO driver,
+		CarSummaryDTO car,
+
 		BigDecimal kilometersDriven,
 		BigDecimal kilometersFrom,
 		BigDecimal kilometersTo,
@@ -23,8 +26,6 @@ public record DailyRevenueResponseDTO(
 		BigDecimal driverRemuneration,
 		LocalTime drivingStartTime,
 		LocalTime drivingEndTime
-) {
-
-}
+) {}
 
 

@@ -43,4 +43,13 @@ public class RevenueController {
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, revenues, i18n.getMessage("success.fetched")));
 	}
 
+	@PutMapping("/{id}")
+	public ResponseEntity<ApiResponseDTO<DailyRevenueResponseDTO>> updateDailyRevenue(
+			@PathVariable Long id,
+			@Valid @RequestBody CreateDailyRevenueRequestDTO request) {
+		DailyRevenueResponseDTO updated = revenueService.updateDailyRevenue(id, request);
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(new ApiResponseDTO<>(true, updated, i18n.getMessage("success.updated")));
+	}
+
 }

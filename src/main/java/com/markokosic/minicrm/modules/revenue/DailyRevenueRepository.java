@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface DailyRevenueRepository extends JpaRepository<DailyRevenue, Long> {
 
@@ -28,5 +29,7 @@ public interface DailyRevenueRepository extends JpaRepository<DailyRevenue, Long
     );
 
     Page<DailyRevenue> findAllByTenantId(Long tenantId, Pageable pageable);
+
+    Optional<DailyRevenue> findByIdAndTenantId(Long id, Long tenantId);
 
 }

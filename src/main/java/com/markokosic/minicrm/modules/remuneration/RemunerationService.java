@@ -21,4 +21,11 @@ public class RemunerationService {
 
 	}
 
+//	public RemunerationSplit calculateRemunerationSplitFromDailyRevenue(BigDecimal dailyRevenue, DriverRemunerationConfig config, BigDecimal manualCompanyRemuneration) {
+//		if (manualCompanyRemuneration != null) {
+//			return new RemunerationSplit(manualCompanyRemuneration, dailyRevenue.subtract(manualCompanyRemuneration));
+//		}
+//		return calculateRemunerationSplitFromDailyRevenue(dailyRevenue, config);
+//	}
+
 }

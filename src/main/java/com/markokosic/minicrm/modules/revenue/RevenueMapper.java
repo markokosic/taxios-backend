@@ -5,6 +5,7 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.math.BigDecimal;
 
@@ -30,9 +31,27 @@ public interface RevenueMapper {
 			BigDecimal driverRemuneration
 	);
 
-	@Mapping(source = "driver.firstName", target = "driverFirstName")
-	@Mapping(source = "driver.lastName", target = "driverLastName")
-	@Mapping(source = "car.licensePlate", target = "licensePlate")
+	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "tenantId", ignore = true)
+	@Mapping(target = "car", source = "car")
+	@Mapping(target = "driver", source = "driver")
+	@Mapping(target = "remunerationConfig", source = "remunerationConfig")
+	@Mapping(target = "companyRemuneration", source = "companyRemuneration")
+	@Mapping(target = "driverRemuneration", source = "driverRemuneration")
+	@Mapping(target = "drivingStartTime", source = "dto.drivingStartTime")
+	@Mapping(target = "drivingEndTime", source = "dto.drivingEndTime")
+	void updateEntityFromDto(
+			CreateDailyRevenueRequestDTO dto,
+			@MappingTarget DailyRevenue entity,
+			Driver driver,
+			com.markokosic.minicrm.modules.car.model.Car car,
+			DriverRemunerationConfig remunerationConfig,
+			BigDecimal companyRemuneration,
+			BigDecimal driverRemuneration
+	);
+
+	@Mapping(source = "driver", target = "driver")
+	@Mapping(source = "car", target = "car")
 	@Mapping(source = "remunerationConfig.type", target = "remunerationModelType")
 	DailyRevenueResponseDTO toDto(DailyRevenue entity);
 }
