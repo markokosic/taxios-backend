@@ -52,4 +52,12 @@ public class RevenueController {
 				.body(new ApiResponseDTO<>(true, updated, i18n.getMessage("success.updated")));
 	}
 
+	@DeleteMapping("/{id}")
+	public ResponseEntity<ApiResponseDTO<Void>> deleteDailyRevenue(
+			@PathVariable Long id) {
+		 revenueService.deleteDailyRevenue(id);
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
+	}
+
 }

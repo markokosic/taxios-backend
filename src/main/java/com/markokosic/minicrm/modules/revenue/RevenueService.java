@@ -148,4 +148,14 @@ public class RevenueService {
 		return revenueMapper.toDto(dailyRevenue);
 	}
 
+	@Transactional
+	public void deleteDailyRevenue(Long id) {
+		Long tenantId = tenantService.getTenantIdFromContextHolder();
+
+		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
+				.orElseThrow(() -> new NotFoundException(ApiErrorCode.REVENUE_NOT_FOUND));
+
+		dailyRevenueRepository.delete(dailyRevenue);
+	}
+
 }
