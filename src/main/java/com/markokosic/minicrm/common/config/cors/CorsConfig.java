@@ -18,7 +18,8 @@ public class CorsConfig {
 		config.setAllowedOriginPatterns(List.of(
 				"http://localhost:[*]",
 				"http://127.0.0.1:[*]",
-				"https://" + "taxi.mk0.me"
+				"https://" + "taxi.mk0.me",
+				"https://taxi-stage.mk0.me"
 		));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowedMethods(List.of("GET","POST","PUT", "PATCH", "DELETE", "OPTIONS"));
