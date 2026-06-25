@@ -135,17 +135,21 @@ public class RevenueService {
 				.orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
 
 		DriverRemunerationConfig configToUse;
+		DriverRemunerationConfig oldConfig = dailyRevenue.getRemunerationConfig();
 
-		if (!dailyRevenue.getDriver().getId().equals(driver.getId())) {
+		// Bedingung: Fahrer hat sich geändert ODER Typ hat sich geändert ODER es gab vorher keine Config
+		if (!dailyRevenue.getDriver().getId().equals(driver.getId()) ||
+				oldConfig == null ||
+				!oldConfig.getType().equals(request.driverRemunerationType())) {
+
+			// Hole die aktuelle Config für den (evtl. neuen) Fahrer und den neuen Typ
 			configToUse = driver.getCurrentRemunerationConfigByType(request.driverRemunerationType());
 			if (configToUse == null) {
-				throw new IllegalStateException("No remuneration config found for new driver of type: " + request.driverRemunerationType());
+				throw new IllegalStateException("No remuneration config found for driver of type: " + request.driverRemunerationType());
 			}
 		} else {
-			configToUse = dailyRevenue.getRemunerationConfig();
-			if (configToUse == null) {
-				throw new IllegalStateException("No remuneration config linked to this existing daily revenue record.");
-			}
+			// Fahrer und Typ sind identisch -> Nutze die historisch bereits verknüpfte Config
+			configToUse = oldConfig;
 		}
 
 		RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(
