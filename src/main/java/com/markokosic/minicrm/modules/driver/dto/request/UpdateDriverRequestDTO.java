@@ -3,6 +3,8 @@ package com.markokosic.minicrm.modules.driver.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
+import java.util.List;
+
 @Schema(description = "Request object for updating a driver")
 public record UpdateDriverRequestDTO(
 
@@ -23,5 +25,5 @@ public record UpdateDriverRequestDTO(
 		String phone,
 
 
-		CreateRemunerationRequestDTO remunerationConfig
+		List<CreateRemunerationRequestDTO> remunerationConfigs
 ) {}

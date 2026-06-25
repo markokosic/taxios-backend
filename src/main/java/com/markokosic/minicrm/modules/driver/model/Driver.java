@@ -1,5 +1,7 @@
 package com.markokosic.minicrm.modules.driver.model;
 
+import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -8,8 +10,9 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -38,7 +41,6 @@ public class Driver {
 	@Column(name="phone")
 	private String phone;
 
-
 	@OneToMany(
 			mappedBy = "driver",
 			cascade = CascadeType.ALL,
@@ -46,31 +48,83 @@ public class Driver {
 	)
 	private List<DriverRemunerationConfig> remunerationConfigs = new ArrayList<>();
 
-
-	public void activateNewRemuneration(DriverRemunerationConfig newConfig) {
+	public void syncRemunerationConfigs(
+			List<CreateRemunerationRequestDTO> requests,
+			Function<CreateRemunerationRequestDTO, DriverRemunerationConfig> mapper
+	) {
 		LocalDate today = LocalDate.now();
+		LocalDate yesterday = today.minusDays(1);
 
-		this.remunerationConfigs.stream()
-			.filter(DriverRemunerationConfig::isCurrent)
-				.forEach(config -> {
-					config.deactivate(today);
-				});
+		// get current active configs by type
+		Map<RemunerationModelType, DriverRemunerationConfig> currentActiveMap = this.remunerationConfigs.stream()
+				.filter(DriverRemunerationConfig::isCurrent)
+				.collect(Collectors.toMap(DriverRemunerationConfig::getType, c -> c));
 
-		newConfig.activate(today);
-		newConfig.setDriver(this);
+		Set<RemunerationModelType> typesInRequest = new HashSet<>();
 
-		this.remunerationConfigs.add(newConfig);
+		for (CreateRemunerationRequestDTO request : requests) {
+			RemunerationModelType type = request.remunerationModelType();
+			typesInRequest.add(type);
+
+			DriverRemunerationConfig existing = currentActiveMap.get(type);
+
+			if (existing != null) {
+				if (!existing.isIdenticalTo(request)) {
+					existing.deactivate(yesterday);
+					DriverRemunerationConfig newConfig = mapper.apply(request);
+					newConfig.activate(today);
+					newConfig.setDriver(this);
+					this.remunerationConfigs.add(newConfig);
+				}
+			} else {
+				DriverRemunerationConfig newConfig = mapper.apply(request);
+				newConfig.activate(today);
+				newConfig.setDriver(this);
+				this.remunerationConfigs.add(newConfig);
+			}
+		}
+
+		//deactivate any types that were not in the request - basically delete a remuneration config.
+		currentActiveMap.values().stream()
+				.filter(c -> !typesInRequest.contains(c.getType()))
+				.forEach(c -> c.deactivate(yesterday));
 	}
 
-	public void initializeWithRemuneration(DriverRemunerationConfig config) {
-		LocalDate today = LocalDate.now();
-		this.remunerationConfigs.stream()
-//				.filter(DriverRemunerationConfig::current)
-				.forEach(c -> c.deactivate(today.minusDays(1)));
+	public void initializeWithRemunerationConfigs(List<DriverRemunerationConfig> newConfigs) {
+		if (newConfigs == null || newConfigs.isEmpty()) {
+			throw new IllegalArgumentException("Initial remuneration configs cannot be empty");
+		}
 
-		config.activate(today);
-		config.setDriver(this);
-		this.remunerationConfigs.add(config);
+		this.remunerationConfigs.clear();
+		for (DriverRemunerationConfig config : newConfigs) {
+			config.activate(LocalDate.now());
+			config.setDriver(this);
+			remunerationConfigs.add(config);
+		}
+	}
+
+	public DriverRemunerationConfig getCurrentRemunerationConfig() {
+		return this.remunerationConfigs.stream()
+				.filter(DriverRemunerationConfig::isCurrent)
+				.findFirst()
+				.orElse(null);
+	}
+
+	public DriverRemunerationConfig getCurrentRemunerationConfigByType(RemunerationModelType type) {
+		return this.remunerationConfigs.stream()
+				.filter(c -> c.isCurrent() && c.getType() == type)
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException("Driver has no configuration of type: " + type));
+	}
+
+	public void deactivateConfig(Long configId) {
+		this.remunerationConfigs.stream()
+				.filter(c -> c.getId().equals(configId) && c.isCurrent())
+				.findFirst()
+				.ifPresentOrElse(
+						c -> c.deactivate(LocalDate.now()),
+						() -> { throw new IllegalArgumentException("Active configuration with ID " + configId + " not found for this driver."); }
+				);
 	}
 
 	@Column(name = "created_at", nullable = false, updatable = false)
@@ -82,13 +136,6 @@ public class Driver {
 	@Column(name="status", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private DriverStatus status;
-
-	public DriverRemunerationConfig getCurrentRemunerationConfig() {
-		return this.remunerationConfigs.stream()
-				.filter(DriverRemunerationConfig::isCurrent)
-				.findFirst()
-				.orElse(null);
-	}
 
 	@PrePersist
 	protected void onCreate() {

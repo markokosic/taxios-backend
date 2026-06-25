@@ -25,14 +25,40 @@ Cookie: accessToken={{accessToken}}
   "lastName": "Doe",
   "email": "john.doe@example.com",
   "phone": "+43 664 1234567",
-  "remunerationConfig": {
-    "remunerationModelType": "PERCENTAGE_SHARE",
-    "minDriverPayout": "60",
-    "driverRevenueSharePercentage": "60"
-  }
+  "remunerationConfigs": [
+    {
+      "remunerationModelType": "PERCENTAGE_SHARE",
+      "minDriverPayout": "60",
+      "driverRevenueSharePercentage": "60"
+    }
+  ]
 }
 
-### Create a new Driver with WEEKLY_FIXED_RATE CONFIG
+### 1.1 Create a new Driver with MULTIPLE CONFIGS (Percentage + Weekly)
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "firstName": "Multi",
+  "lastName": "Config",
+  "email": "multi.config@example.com",
+  "phone": "+43 664 1111111",
+  "remunerationConfigs": [
+    {
+      "remunerationModelType": "PERCENTAGE_SHARE",
+      "minDriverPayout": "50",
+      "driverRevenueSharePercentage": "70"
+    },
+    {
+      "remunerationModelType": "WEEKLY_FIXED_RATE",
+      "weeklyFixedCompanySettlement": "500",
+      "settlementDay": 1
+    }
+  ]
+}
+
+### 1.2 Create a new Driver with WEEKLY_FIXED_RATE CONFIG
 POST {{host}}{{api}}
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}
@@ -40,13 +66,54 @@ Cookie: accessToken={{accessToken}}
 {
   "firstName": "John",
   "lastName": "Weekly",
-  "email": "john.doe@example.com",
+  "email": "john.weekly@example.com",
   "phone": "+43 664 1234567",
-  "remunerationConfig": {
-    "remunerationModelType": "WEEKLY_FIXED_RATE",
-    "weeklyFixedCompanySettlement": "600",
-    "settlementDay": 3
-  }
+  "remunerationConfigs": [
+    {
+      "remunerationModelType": "WEEKLY_FIXED_RATE",
+      "weeklyFixedCompanySettlement": "600",
+      "settlementDay": 3
+    }
+  ]
+}
+
+### 1.3 Create a new Driver with FLAT_RATE CONFIG
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "firstName": "John",
+  "lastName": "Flatrate",
+  "email": "john.flatrate@example.com",
+  "phone": "+43 664 1234567",
+  "remunerationConfigs": [
+    {
+      "remunerationModelType": "FLAT_RATE",
+      "flatRateFee": "80.00"
+    }
+  ]
+}
+
+### 1.4 ERROR: Create a new Driver with DUPLICATE TYPES (Should fail)
+POST {{host}}{{api}}
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "firstName": "Duplicate",
+  "lastName": "Type",
+  "email": "dup@example.com",
+  "remunerationConfigs": [
+    {
+      "remunerationModelType": "FLAT_RATE",
+      "flatRateFee": "80.00"
+    },
+    {
+      "remunerationModelType": "FLAT_RATE",
+      "flatRateFee": "100.00"
+    }
+  ]
 }
 
 ### 2. Get All Drivers (Paginated)
@@ -55,10 +122,10 @@ Cookie: accessToken={{accessToken}}
 
 ### 3. Get Driver by ID
 # Replace '1' with a valid driver ID from the response of #2
-GET {{host}}{{api}}/1
+GET {{host}}{{api}}/17
 Cookie: accessToken={{accessToken}}
 
-### 4. Update Driver
+### 4. Update Driver (Basic Data)
 PATCH {{host}}{{api}}/1
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}
@@ -68,6 +135,27 @@ Cookie: accessToken={{accessToken}}
   "phone": "+43 664 9999999"
 }
 
+### 4.1 Update Driver (Replace/Add Remuneration Configs)
+# This will deactivate old configs of the same type and add new ones
+PATCH {{host}}{{api}}/17
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "remunerationConfigs": [
+    {
+      "remunerationModelType": "PERCENTAGE_SHARE",
+      "minDriverPayout": "100",
+      "driverRevenueSharePercentage": "100"
+    }
+  ]
+}
+
 ### 5. Delete Driver
 DELETE {{host}}{{api}}/1
+Cookie: accessToken={{accessToken}}
+
+### 6. Deactivate Specific Remuneration Config
+# Replace '1' with driverId and '5' with a valid configId
+DELETE {{host}}{{api}}/1/remuneration-configs/5
 Cookie: accessToken={{accessToken}}

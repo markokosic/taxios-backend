@@ -3,6 +3,8 @@ package com.markokosic.minicrm.modules.driver.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
+import java.util.List;
+
 @Schema(description = "Request object for creating a new driver")
 
 public record CreateDriverRequestDTO(
@@ -27,6 +29,6 @@ public record CreateDriverRequestDTO(
 		String phone,
 
 		@NotNull(message = "{driver.remunerationModel.notNull}")
-		@Schema(description = "The internal remuneration model assigned to the driver")
-		CreateRemunerationRequestDTO remunerationConfig
+		@Schema(description = "The internal remuneration models assigned to the driver")
+		List<CreateRemunerationRequestDTO> remunerationConfigs
 ) {}

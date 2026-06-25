@@ -13,10 +13,11 @@ import java.time.LocalDate;
 )
 @JsonSubTypes({
 		@JsonSubTypes.Type(value = PercentageShareRemunerationResponseDTO.class, name = "PERCENTAGE_SHARE"),
-		@JsonSubTypes.Type(value = WeeklyFixedRateRemunerationResponseDTO.class, name = "WEEKLY_FIXED_RATE")
+		@JsonSubTypes.Type(value = WeeklyFixedRateRemunerationResponseDTO.class, name = "WEEKLY_FIXED_RATE"),
+		@JsonSubTypes.Type(value = FlatRateRemunerationResponseDTO.class, name = "FLAT_RATE")
 })
 public sealed interface RemunerationConfigResponseDTO
-		permits PercentageShareRemunerationResponseDTO, WeeklyFixedRateRemunerationResponseDTO {
+		permits PercentageShareRemunerationResponseDTO, WeeklyFixedRateRemunerationResponseDTO, FlatRateRemunerationResponseDTO {
 	Long id();
 	LocalDate validFrom();
 	LocalDate validUntil();
