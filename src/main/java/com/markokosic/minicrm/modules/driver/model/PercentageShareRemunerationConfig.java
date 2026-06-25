@@ -22,7 +22,7 @@ import java.util.Objects;
 @DiscriminatorValue("PERCENTAGE_SHARE")
 public class PercentageShareRemunerationConfig extends DriverRemunerationConfig {
 
-	@DecimalMin(value = "0.0", inclusive = false, message = "{driver.driverRevenueSharePercentage.invalid}")
+	@DecimalMin(value = "0.0", inclusive = true, message = "{driver.driverRevenueSharePercentage.invalid}")
 	@DecimalMax(value = "100.0", message = "{driver.driverRevenueSharePercentage.invalid}")
 	@Column(name="driver_revenue_share_percentage", precision = 19, scale = 2)
 	private BigDecimal driverRevenueSharePercentage;
