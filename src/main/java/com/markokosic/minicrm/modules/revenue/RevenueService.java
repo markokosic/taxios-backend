@@ -122,6 +122,7 @@ public class RevenueService {
 	@Transactional
 	public DailyRevenueResponseDTO updateDailyRevenue(Long id, CreateDailyRevenueRequestDTO request) {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
+
 		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
 				.orElseThrow(() -> new NotFoundException(ApiErrorCode.REVENUE_NOT_FOUND));
 
@@ -133,15 +134,24 @@ public class RevenueService {
 		Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
 				.orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
 
-		DriverRemunerationConfig currentConfig = driver.getCurrentRemunerationConfigByType(request.driverRemunerationType());
-		if (currentConfig == null) {
-			throw new IllegalStateException("No remuneration config found for driver of type: " + request.driverRemunerationType());
+		DriverRemunerationConfig configToUse;
+
+		if (!dailyRevenue.getDriver().getId().equals(driver.getId())) {
+			configToUse = driver.getCurrentRemunerationConfigByType(request.driverRemunerationType());
+			if (configToUse == null) {
+				throw new IllegalStateException("No remuneration config found for new driver of type: " + request.driverRemunerationType());
+			}
+		} else {
+			configToUse = dailyRevenue.getRemunerationConfig();
+			if (configToUse == null) {
+				throw new IllegalStateException("No remuneration config linked to this existing daily revenue record.");
+			}
 		}
 
 		RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(
-				request.revenue(), currentConfig);
+				request.revenue(), configToUse);
 
-		revenueMapper.updateEntityFromDto(request, dailyRevenue, driver, car, currentConfig,
+		revenueMapper.updateEntityFromDto(request, dailyRevenue, driver, car, configToUse,
 				remunerationSplit.companyRemuneration(), remunerationSplit.driverRemuneration());
 
 		dailyRevenueRepository.save(dailyRevenue);
