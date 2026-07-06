@@ -10,6 +10,7 @@ import com.markokosic.minicrm.modules.driver.service.DriverLookupService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import com.markokosic.minicrm.modules.tenant.TenantService;
+import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -70,7 +71,7 @@ public class RevenueService {
 
 					Car car = carsMap.get(dto.carId());
 					if (car == null) {
-						throw new NotFoundException(ApiErrorCode.CAR_NOT_FOUND);
+						throw new ResourceNotFoundException("domain.car.not_found");
 					}
 
 					DriverRemunerationConfig currentConfig = driver.getCurrentRemunerationConfigByType(dto.driverRemunerationType());
@@ -91,15 +92,15 @@ public class RevenueService {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
 
 		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
-				.orElseThrow(() -> new NotFoundException(ApiErrorCode.REVENUE_NOT_FOUND));
+				.orElseThrow(() -> new ResourceNotFoundException("domain.revenue.not_found"));
 
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(request.driverId());
 		if (!driver.getTenantId().equals(tenantId)) {
-			throw new NotFoundException(ApiErrorCode.DRIVER_NOT_FOUND);
+			throw new ResourceNotFoundException("domain.driver.not_found");
 		}
 
 		Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
-				.orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
+				.orElseThrow(() -> new ResourceNotFoundException("domain.car.not_found"));
 
 		DriverRemunerationConfig configToUse;
 		DriverRemunerationConfig oldConfig = dailyRevenue.getRemunerationConfig();
@@ -134,7 +135,7 @@ public class RevenueService {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();
 
 		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
-				.orElseThrow(() -> new NotFoundException(ApiErrorCode.REVENUE_NOT_FOUND));
+				.orElseThrow(() -> new ResourceNotFoundException("domain.revenue.not_found"));
 
 		dailyRevenueRepository.delete(dailyRevenue);
 	}

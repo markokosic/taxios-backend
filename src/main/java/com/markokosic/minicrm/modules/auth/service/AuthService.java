@@ -13,7 +13,7 @@ import com.markokosic.minicrm.modules.user.User;
 import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
 import com.markokosic.minicrm.modules.tenant.TenantRepository;
 import com.markokosic.minicrm.modules.user.UserRepository;
-import jakarta.security.auth.message.AuthException;
+import com.markokosic.minicrm.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -54,7 +54,7 @@ public class AuthService {
     public Tenant createTenant (String name) {
 
         if(tenantRepository.existsByName(name)){
-            throw new ResourceConflictException("tenant.name.duplicate");
+            throw new ResourceConflictException("domain.tenant.name.duplicate");
         }
 
         Tenant tenant = new Tenant();
@@ -64,7 +64,7 @@ public class AuthService {
 
     public void createUser (RegisterTenantRequestDTO request, Tenant tenant) {
         if(userRepository.existsByEmail(request.getEmail())){
-            throw new ResourceConflictException("user.email.duplicateduplicate");
+            throw new ResourceConflictException("domain.user.email.duplicate");
 
         }
 
@@ -84,7 +84,7 @@ public class AuthService {
         Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail());
 
         if (optionalUser.isEmpty()) {
-            throw new AuthException(ApiErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new UnauthorizedException("auth.invalid_credentials");
         }
 
         User user = optionalUser.get();
@@ -101,7 +101,7 @@ public class AuthService {
             return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
 
         } catch (AuthenticationException ex) {
-            throw new AuthException(ApiErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new UnauthorizedException("auth.invalid_credentials");
 
         }
     }
@@ -120,13 +120,13 @@ public class AuthService {
     public String refreshAccessToken(String refreshToken){
         //1. checkk if refreshToken is received
         if(refreshToken.isEmpty()){
-            throw new ValidationException(ApiErrorCode.AUTH_NO_TOKEN_RECEIVED);
+            throw new UnauthorizedException("auth.token.no-token-received");
         }
 
         //2 validate refresh token, if not valid return UNAUTH, please login again
         boolean isSignedAndValid = jwtService.validateRefreshToken(refreshToken);
         if(!isSignedAndValid){
-            throw new AuthException(ApiErrorCode.AUTH_TOKEN_EXPIRED);
+            throw new UnauthorizedException("auth.token.expired");
         };
 
         String username = jwtService.extractEmail(refreshToken);

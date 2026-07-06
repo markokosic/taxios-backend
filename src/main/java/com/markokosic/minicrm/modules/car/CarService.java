@@ -7,6 +7,7 @@ import com.markokosic.minicrm.modules.car.dto.response.CarResponseDTO;
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.car.model.CarStatus;
 import com.markokosic.minicrm.modules.tenant.TenantService;
+import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,7 +56,7 @@ public class CarService {
     public void deleteCar(Long id) {
         Car car = getCarOrThrow(id);
         if (CarStatus.DELETED.equals(car.getStatus())) {
-            throw new NotFoundException(ApiErrorCode.CAR_NOT_FOUND);
+            throw new ResourceNotFoundException("domain.car.not_found");
         }
         car.setStatus(CarStatus.DELETED);
         carRepository.save(car);
@@ -64,6 +65,6 @@ public class CarService {
     private Car getCarOrThrow(Long id) {
         Long tenantId = tenantService.getTenantIdFromContextHolder();
         return carRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException("domain.car.not_found"));
     }
 }

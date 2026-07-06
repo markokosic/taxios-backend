@@ -14,6 +14,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 
 import java.time.LocalDateTime;
 
@@ -34,7 +35,7 @@ public class AuthServiceTest {
 	@Mock
 	private AuthenticationManager authenticationManager;
 	private TokenProperties tokenProperties;
-	private ValidationException validationException;
+	private ResourceConflictException resourceConflictException;
 
 	@InjectMocks
 	private AuthService authService;
@@ -68,7 +69,7 @@ public class AuthServiceTest {
 
 		Mockito.when(tenantRepository.existsByName(tenantName)).thenReturn(true);
 
-		ValidationException exception = assertThrows(ValidationException.class, () -> {
+		ResourceConflictException exception = assertThrows(ResourceConflictException.class, () -> {
 			authService.createTenant(tenantName);
 		});
 	}
@@ -118,7 +119,7 @@ public class AuthServiceTest {
 
 		Mockito.when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
 
-		ValidationException exception = assertThrows(ValidationException.class, () -> {
+		ResourceConflictException exception = assertThrows(ResourceConflictException.class, () -> {
 			authService.createUser(dto, tenant);
 		});
 	}

@@ -30,8 +30,8 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
 			WebRequest request) {
 
 		ProblemDetail body = ex.getBody();
-		body.setTitle(i18n.getMessage("validation_failed_title"));
-		body.setDetail(i18n.getMessage("validation_failed_detail"));
+		body.setTitle(i18n.getMessage("validation.title"));
+		body.setDetail(i18n.getMessage("validation.detail"));
 
 		Map<String, List<String>> errors = new HashMap<>();
 		ex.getBindingResult().getFieldErrors().forEach(error ->
@@ -81,7 +81,7 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
 
 		ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
 				HttpStatus.INTERNAL_SERVER_ERROR,
-				i18n.getMessage("internal_server_error")
+				i18n.getMessage("system.internal_server_error")
 		);
 		problemDetail.setTitle("Internal Server Error");
 		return problemDetail;
