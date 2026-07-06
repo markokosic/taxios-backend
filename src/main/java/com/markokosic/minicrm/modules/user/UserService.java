@@ -25,9 +25,6 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public void deleteUser(Long id) {
-
-    }
 
     public UserResponseDTO convertToUserResponseDto(User user) {
         return userMapper.userToUserResponseDTO(user);

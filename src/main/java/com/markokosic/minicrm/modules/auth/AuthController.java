@@ -1,17 +1,18 @@
 package com.markokosic.minicrm.modules.auth;
 
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
+import com.markokosic.minicrm.exception.ForbiddenException;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RefreshAccessTokenResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
-import com.markokosic.minicrm.exception.AuthException;
-import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.auth.service.AuthService;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
+import jakarta.security.auth.message.AuthException;
 import jakarta.validation.Valid;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -67,9 +68,14 @@ public class AuthController {
                 .body(new ApiResponseDTO<>(true, authResponse, "Successfully logged in"));
     }
 
-    //TODO CREATE COOKIE SERVICE
     @GetMapping("/refresh-token")
     public ResponseEntity<ApiResponseDTO<RefreshAccessTokenResponseDTO>> refreshAccessToken(@CookieValue("refreshToken") String refreshToken){
+        // TODO Refactor:
+        // Remove try/catch and handle exceptions via @RestControllerAdvice.
+        // Move cookie handling into the authentication service.
+        // Handle AuthException and ValidationException via @RestControllerAdvice.
+        // Keep this controller responsible only for request/response mapping.
+
 
         try {
             String accessToken = authService.refreshAccessToken(refreshToken);
@@ -89,7 +95,7 @@ public class AuthController {
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                     .body(new ApiResponseDTO<>(true, responseDTO, "Successfully refreshed Access Token"));
 
-        } catch (AuthException | ValidationException e) {
+        } catch (ForbiddenException | ValidationException e) {
             ResponseCookie clearAccessToken = ResponseCookie.from("accessToken", "")
                     .httpOnly(true)
                     .secure(true)

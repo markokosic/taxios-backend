@@ -3,7 +3,6 @@ package com.markokosic.minicrm.modules.revenue;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
-import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -28,11 +27,6 @@ public class DailyRevenue {
 	@Column(name = "tenant_id", nullable = false)
 	@NotNull
 	private Long tenantId;
-
-//	@Column(name= "remuneration_model_type", nullable = false)
-//	@NotNull
-//	@Enumerated(EnumType.STRING)
-//	private RemunerationModelType remunerationModelType;
 
 	@Column(name = "trip_count")
 	private Long tripCount;

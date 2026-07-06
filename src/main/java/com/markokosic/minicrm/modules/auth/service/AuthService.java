@@ -1,20 +1,19 @@
 package com.markokosic.minicrm.modules.auth.service;
 
 
-import com.markokosic.minicrm.common.error.ApiErrorCode;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
-import com.markokosic.minicrm.exception.AuthException;
-import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.tenant.Tenant;
 import com.markokosic.minicrm.modules.user.User;
 import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
 import com.markokosic.minicrm.modules.tenant.TenantRepository;
 import com.markokosic.minicrm.modules.user.UserRepository;
+import jakarta.security.auth.message.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -55,7 +54,7 @@ public class AuthService {
     public Tenant createTenant (String name) {
 
         if(tenantRepository.existsByName(name)){
-            throw new ValidationException(ApiErrorCode.TENANT_NAME_DUPLICATE);
+            throw new ResourceConflictException("tenant.name.duplicate");
         }
 
         Tenant tenant = new Tenant();
@@ -65,7 +64,8 @@ public class AuthService {
 
     public void createUser (RegisterTenantRequestDTO request, Tenant tenant) {
         if(userRepository.existsByEmail(request.getEmail())){
-            throw new ValidationException(ApiErrorCode.VALIDATION_EMAIL_DUPLICATE);
+            throw new ResourceConflictException("user.email.duplicateduplicate");
+
         }
 
         User newUser = new User();

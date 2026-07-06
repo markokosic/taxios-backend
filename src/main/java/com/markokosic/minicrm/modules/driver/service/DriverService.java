@@ -2,9 +2,6 @@ package com.markokosic.minicrm.modules.driver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
-import com.markokosic.minicrm.common.error.ApiErrorCode;
-import com.markokosic.minicrm.exception.NotFoundException;
-import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;

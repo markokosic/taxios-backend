@@ -1,7 +1,5 @@
 package com.markokosic.minicrm.modules.driver.service;
 
-import com.markokosic.minicrm.common.error.ApiErrorCode;
-import com.markokosic.minicrm.exception.NotFoundException;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.tenant.TenantService;

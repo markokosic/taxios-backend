@@ -1,10 +1,7 @@
 package com.markokosic.minicrm.modules.auth.service;
 
-import com.markokosic.minicrm.modules.auth.service.AuthService;
-import com.markokosic.minicrm.modules.auth.service.JWTService;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
-import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.tenant.Tenant;
 import com.markokosic.minicrm.modules.user.User;
 import com.markokosic.minicrm.modules.tenant.TenantRepository;

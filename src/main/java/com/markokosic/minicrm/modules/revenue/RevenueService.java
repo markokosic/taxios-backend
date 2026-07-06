@@ -1,8 +1,6 @@
 package com.markokosic.minicrm.modules.revenue;
 
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
-import com.markokosic.minicrm.common.error.ApiErrorCode;
-import com.markokosic.minicrm.exception.NotFoundException;
 import com.markokosic.minicrm.modules.car.CarRepository;
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
@@ -12,17 +10,14 @@ import com.markokosic.minicrm.modules.driver.service.DriverLookupService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import com.markokosic.minicrm.modules.tenant.TenantService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,34 +32,6 @@ public class RevenueService {
 	private final DriverRepository driverRepository;
 	private final RemunerationService remunerationService;
 	private final CarRepository carRepository;
-
-//	@Transactional
-//	public void createDailyRevenue(CreateDailyRevenueRequestDTO request){
-//		Driver driver = driverLookupService.validateDriverExistsOrThrow(request.driverId());
-//		Long tenantId = tenantService.getTenantIdFromContextHolder();
-//
-//		Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
-//				.orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
-//
-//		DriverRemunerationConfig currentConfig;
-//		if (request.driverRemunerationType() == RemunerationModelType.FLAT_RATE_TRIP) {
-//			currentConfig = driver.getActiveFlatRateRemunerationConfig();
-//			if (currentConfig == null) {
-//				throw new IllegalStateException("No active flat-rate remuneration config found for driver: " + driver.getId());
-//			}
-//		} else {
-//			currentConfig = driver.getActivePrimaryRemunerationConfig();
-//			if (currentConfig == null) {
-//				throw new IllegalStateException("No active primary remuneration config found for driver: " + driver.getId());
-//			}
-//		}
-//
-//
-//		RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(request.revenue(), currentConfig, request.companyRemuneration());
-//
-//		DailyRevenue dailyRevenue = revenueMapper.toEntity(request, tenantId, driver, car, currentConfig, remunerationSplit.companyRemuneration(), remunerationSplit.driverRemuneration());
-//		dailyRevenueRepository.save(dailyRevenue);
-//	}
 
 	public PageResponseDTO<DailyRevenueResponseDTO> getAllRevenues (Pageable pageable) {
 		Long tenantId = tenantService.getTenantIdFromContextHolder();

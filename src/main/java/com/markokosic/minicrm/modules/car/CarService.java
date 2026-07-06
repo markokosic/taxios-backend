@@ -1,8 +1,6 @@
 package com.markokosic.minicrm.modules.car;
 
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
-import com.markokosic.minicrm.common.error.ApiErrorCode;
-import com.markokosic.minicrm.exception.NotFoundException;
 import com.markokosic.minicrm.modules.car.dto.request.CreateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.request.UpdateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.response.CarResponseDTO;

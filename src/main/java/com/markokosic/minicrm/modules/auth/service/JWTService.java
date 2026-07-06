@@ -12,9 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
 
@@ -77,7 +75,7 @@ public class JWTService {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         //TODO REFACTOR TO SHOW EMAIL NOT USERNAME
-        if (!isTokenSigned(token)) {
+        if (isTokenSigned(token)) {
             return false;
         }
 
@@ -90,7 +88,7 @@ public class JWTService {
     }
 
     public boolean validateRefreshToken(String token) {
-        if (!isTokenSigned(token)) {
+        if (isTokenSigned(token)) {
             return false;
         }
 
@@ -111,9 +109,9 @@ public class JWTService {
     public boolean isTokenSigned(String token) {
         try {
             Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
-            return true;
-        } catch (JwtException e){
             return false;
+        } catch (JwtException e){
+            return true;
         }
     }
 
