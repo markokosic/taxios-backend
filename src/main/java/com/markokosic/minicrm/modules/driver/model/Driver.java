@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import org.hibernate.annotations.BatchSize;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -41,6 +43,7 @@ public class Driver {
 	@Column(name="phone")
 	private String phone;
 
+	@BatchSize(size = 25)
 	@OneToMany(
 			mappedBy = "driver",
 			cascade = CascadeType.ALL,
