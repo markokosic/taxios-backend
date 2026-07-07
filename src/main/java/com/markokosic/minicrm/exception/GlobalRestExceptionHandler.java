@@ -70,7 +70,6 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
 				i18n.getMessage(ex.getI18nKey(), ex.getArgs())
 		);
 		problemDetail.setTitle(status.getReasonPhrase());
-		problemDetail.setProperty("error_code", ex.getI18nKey());
 		return problemDetail;
 	}
 
