@@ -2,9 +2,6 @@ package com.markokosic.minicrm.modules.driver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
-import com.markokosic.minicrm.common.error.ApiErrorCode;
-import com.markokosic.minicrm.exception.NotFoundException;
-import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
@@ -18,6 +15,8 @@ import com.markokosic.minicrm.modules.driver.model.DriverStatus;
 import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfigRepository;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.tenant.TenantService;
+import com.markokosic.minicrm.exception.BadRequestException;
+import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,7 +52,7 @@ public class DriverService {
 				.count();
 
 		if (hasDuplicates) {
-			throw new ValidationException(ApiErrorCode.DRIVER_MULTIPLE_CONFIGURATIONS);
+			throw new BadRequestException("domain.driver.multiple_configurations");
 		}
 
 		driver.initializeWithRemunerationConfigs(configs);
@@ -96,7 +95,7 @@ public class DriverService {
 					.count();
 
 			if (hasDuplicates) {
-				throw new ValidationException(ApiErrorCode.DRIVER_MULTIPLE_CONFIGURATIONS);
+				throw new BadRequestException("domain.driver.multiple_configurations");
 			}
 
 			driver.syncRemunerationConfigs(
@@ -128,7 +127,7 @@ public class DriverService {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(id);
 
 		if (DriverStatus.DELETED.equals(driver.getStatus())) {
-			throw new NotFoundException(ApiErrorCode.DRIVER_NOT_FOUND);
+			throw new ResourceNotFoundException("domain.driver.not_found");
 		}
 
 //		if (hasActiveOrders(driver.getId())) {

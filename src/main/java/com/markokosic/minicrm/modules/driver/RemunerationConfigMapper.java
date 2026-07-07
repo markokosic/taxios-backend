@@ -13,7 +13,6 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.PercentageShareRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.WeeklyFixedRateRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.FlatRateRemunerationConfig;
-import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

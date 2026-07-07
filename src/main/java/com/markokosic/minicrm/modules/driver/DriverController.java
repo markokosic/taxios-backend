@@ -82,6 +82,3 @@ public class DriverController {
 }
 
 //@PostMapping(/{id}/remuneration-configs)
-//public ResponseEntity<ApiResponseDTO<DriverResponseDTO>> createDriver(@Valid @RequestBody CreateDriverRequestDTO request){
-//	DriverResponseDTO newDriver = driverService.createDriver(request);
-//	return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, newDriver, i18n.getMessage("success.created")));};
