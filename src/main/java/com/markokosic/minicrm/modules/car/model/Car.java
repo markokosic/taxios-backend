@@ -2,9 +2,11 @@ package com.markokosic.minicrm.modules.car.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.TenantId;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.TenantId;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +21,8 @@ public class Car {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tenant_id", nullable = false)
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
     @NotNull
     private Long tenantId;
 

@@ -44,7 +44,6 @@ public class AuthService {
 
     @Transactional
     public RegisterTenantResponseDTO registerNewTenant(RegisterTenantRequestDTO userAndTenantDto) {
-
         Tenant savedTenant = createTenant(userAndTenantDto.getTenantName());
         createUser(userAndTenantDto, savedTenant);
 
@@ -65,16 +64,15 @@ public class AuthService {
     public void createUser (RegisterTenantRequestDTO request, Tenant tenant) {
         if(userRepository.existsByEmail(request.getEmail())){
             throw new ResourceConflictException("domain.user.email.duplicate");
-
         }
 
-        User newUser = new User();
-        newUser.setTenantId(tenant.getId());
-        newUser.setEmail(request.getEmail());
-        newUser.setFirstName(request.getFirstName());
-        newUser.setLastName(request.getLastName());
-        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(newUser);
+        userRepository.insertUser(
+            request.getEmail(),
+            request.getFirstName(),
+            request.getLastName(),
+            passwordEncoder.encode(request.getPassword()),
+            tenant.getId()
+        );
     }
 
 

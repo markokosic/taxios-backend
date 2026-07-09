@@ -6,7 +6,6 @@ import com.markokosic.minicrm.modules.car.dto.request.UpdateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.response.CarResponseDTO;
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.car.model.CarStatus;
-import com.markokosic.minicrm.modules.tenant.TenantService;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,12 +19,10 @@ public class CarService {
 
     private final CarRepository carRepository;
     private final CarMapper carMapper;
-    private final TenantService tenantService;
 
     @Transactional
     public CarResponseDTO createCar(CreateCarRequestDTO request) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-        Car car = carMapper.toEntity(request, tenantId);
+        Car car = carMapper.toEntity(request);
         carRepository.save(car);
         return carMapper.toDto(car);
     }
@@ -38,8 +35,7 @@ public class CarService {
 
     @Transactional(readOnly = true)
     public PageResponseDTO<CarResponseDTO> getAllCars(Pageable pageable) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-        Page<CarResponseDTO> page = carRepository.findAllByTenantIdAndStatus(tenantId, CarStatus.ACTIVE, pageable)
+        Page<CarResponseDTO> page = carRepository.findAllByStatus(CarStatus.ACTIVE, pageable)
                 .map(carMapper::toDto);
         return PageResponseDTO.from(page);
     }
@@ -63,8 +59,7 @@ public class CarService {
     }
 
     private Car getCarOrThrow(Long id) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-        return carRepository.findByIdAndTenantId(id, tenantId)
+        return carRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("domain.car.not_found"));
     }
 }

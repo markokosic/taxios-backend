@@ -9,7 +9,6 @@ import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.driver.service.DriverLookupService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import com.markokosic.minicrm.modules.tenant.TenantService;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,28 +28,22 @@ public class RevenueService {
 	private final DriverLookupService driverLookupService;
 	private final DailyRevenueRepository dailyRevenueRepository;
 	private final RevenueMapper revenueMapper;
-	private final TenantService tenantService;
 	private final DriverRepository driverRepository;
 	private final RemunerationService remunerationService;
 	private final CarRepository carRepository;
 
 	public PageResponseDTO<DailyRevenueResponseDTO> getAllRevenues (Pageable pageable) {
-		Long tenantId = tenantService.getTenantIdFromContextHolder();
-		Page<DailyRevenueResponseDTO> page = dailyRevenueRepository.findAllByTenantId(tenantId, pageable).map(revenueMapper::toDto);;
+		Page<DailyRevenueResponseDTO> page = dailyRevenueRepository.findAll(pageable).map(revenueMapper::toDto);;
 	return PageResponseDTO.from(page);
 	}
 
 	@Transactional
 	public void createDailyRevenuesBulk(List<CreateDailyRevenueRequestDTO> revenueRequests) {
-		Long tenantId = tenantService.getTenantIdFromContextHolder();
-
-
 		//TODO REFACTOR THIS DOUBLE CHECK
 		Set<Long> driverIds = revenueRequests.stream().map(CreateDailyRevenueRequestDTO::driverId).collect(Collectors.toSet());
 		driverLookupService.validateAllExistOrThrow(driverIds);
 
-		List<Driver> drivers = driverRepository.findAllByTenantIdAndIdIn(tenantId, driverIds)
-				.orElseThrow(() -> new IllegalStateException("Drivers not found"));
+		List<Driver> drivers = driverRepository.findAllByIdIn(driverIds);
 
 		Map<Long, Driver> driversMap = drivers.stream()
 				.collect(Collectors.toMap(Driver::getId, d -> d));
@@ -58,7 +51,6 @@ public class RevenueService {
 		Set<Long> carIds = revenueRequests.stream().map(CreateDailyRevenueRequestDTO::carId).collect(Collectors.toSet());
 		List<Car> cars = carRepository.findAllById(carIds);
 		Map<Long, Car> carsMap = cars.stream()
-				.filter(c -> c.getTenantId().equals(tenantId))
 				.collect(Collectors.toMap(Car::getId, c -> c));
 
 		List<DailyRevenue> dailyRevenues = revenueRequests.stream()
@@ -79,7 +71,7 @@ public class RevenueService {
 					RemunerationSplit remunerationSplit = remunerationService.calculateRemunerationSplitFromDailyRevenue(
 							dto.revenue(), currentConfig);
 
-					return revenueMapper.toEntity(dto, tenantId, driver, car, currentConfig,
+					return revenueMapper.toEntity(dto, driver, car, currentConfig,
 							remunerationSplit.companyRemuneration(), remunerationSplit.driverRemuneration());
 				})
 				.toList();
@@ -89,17 +81,12 @@ public class RevenueService {
 
 	@Transactional
 	public DailyRevenueResponseDTO updateDailyRevenue(Long id, CreateDailyRevenueRequestDTO request) {
-		Long tenantId = tenantService.getTenantIdFromContextHolder();
-
-		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
+		DailyRevenue dailyRevenue = dailyRevenueRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("domain.revenue.not_found"));
 
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(request.driverId());
-		if (!driver.getTenantId().equals(tenantId)) {
-			throw new ResourceNotFoundException("domain.driver.not_found");
-		}
 
-		Car car = carRepository.findByIdAndTenantId(request.carId(), tenantId)
+		Car car = carRepository.findById(request.carId())
 				.orElseThrow(() -> new ResourceNotFoundException("domain.car.not_found"));
 
 		DriverRemunerationConfig configToUse;
@@ -132,9 +119,7 @@ public class RevenueService {
 
 	@Transactional
 	public void deleteDailyRevenue(Long id) {
-		Long tenantId = tenantService.getTenantIdFromContextHolder();
-
-		DailyRevenue dailyRevenue = dailyRevenueRepository.findByIdAndTenantId(id, tenantId)
+		DailyRevenue dailyRevenue = dailyRevenueRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("domain.revenue.not_found"));
 
 		dailyRevenueRepository.delete(dailyRevenue);

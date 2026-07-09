@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.TenantId;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,8 +25,8 @@ public class DailyRevenue {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "tenant_id", nullable = false)
-	@NotNull
+	@TenantId
+	@Column(name = "tenant_id", nullable = false, updatable = false)
 	private Long tenantId;
 
 	@Column(name = "trip_count")
