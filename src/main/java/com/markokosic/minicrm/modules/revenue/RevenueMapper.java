@@ -14,7 +14,7 @@ public interface RevenueMapper {
 
 //	@Mapping(target = "driver", expression = "java(driverRepository.getReferenceById(dto.driverId()))")
 	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "tenantId", expression = "java(tenantId)")
+	@Mapping(target = "tenantId", ignore = true)
 	@Mapping(target = "car", source = "car")
 	@Mapping(target = "remunerationConfig", source = "remunerationConfig")
 	@Mapping(target= "companyRemuneration", source="companyRemuneration")
@@ -23,7 +23,6 @@ public interface RevenueMapper {
 	@Mapping(target= "drivingEndTime", source="dto.drivingEndTime")
 	DailyRevenue toEntity(
 			CreateDailyRevenueRequestDTO dto,
-			@Context Long tenantId,
 			Driver driver,
 			com.markokosic.minicrm.modules.car.model.Car car,
 			DriverRemunerationConfig remunerationConfig,

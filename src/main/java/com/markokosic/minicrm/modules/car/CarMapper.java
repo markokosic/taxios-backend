@@ -11,12 +11,12 @@ public interface CarMapper {
 
     CarResponseDTO toDto(Car car);
 
-    @Mapping(target = "tenantId", expression = "java(tenantId)")
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    Car toEntity(CreateCarRequestDTO dto, @Context Long tenantId);
+    Car toEntity(CreateCarRequestDTO dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)

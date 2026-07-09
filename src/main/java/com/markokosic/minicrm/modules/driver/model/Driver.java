@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.TenantId;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,8 +28,8 @@ public class Driver {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "tenant_id", nullable = false)
-	@NotNull
+	@TenantId
+	@Column(name = "tenant_id", nullable = false, updatable = false)
 	private Long tenantId;
 
 	@Column(name="first_name")

@@ -2,7 +2,6 @@ package com.markokosic.minicrm.modules.report;
 
 import com.markokosic.minicrm.modules.revenue.DailyRevenue;
 import com.markokosic.minicrm.modules.revenue.DailyRevenueRepository;
-import com.markokosic.minicrm.modules.tenant.TenantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,16 +24,14 @@ import java.util.stream.Collectors;
 public class ReportService {
 
     private final DailyRevenueRepository dailyRevenueRepository;
-    private final TenantService tenantService;
 
     @Transactional(readOnly = true)
     public DashboardReportDTO generateDashboardReport(int year, Integer month) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
         LocalDate dateFrom;
         LocalDate dateTo;
 
         if (month != null) {
-            YearMonth yearMonth = YearMonth.of(year, month);
+            java.time.YearMonth yearMonth = java.time.YearMonth.of(year, month);
             dateFrom = yearMonth.atDay(1);
             dateTo = yearMonth.atEndOfMonth();
         } else {
@@ -42,7 +39,7 @@ public class ReportService {
             dateTo = LocalDate.of(year, 12, 31);
         }
 
-        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, tenantId, null);
+        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, null);
 
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal totalCompany = BigDecimal.ZERO;
@@ -81,9 +78,7 @@ public class ReportService {
             Long driverId,
             GroupBy groupBy
     ) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-
-        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, tenantId, driverId);
+        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, driverId);
 
         List<RevenueReportEntryDTO> rows;
 
