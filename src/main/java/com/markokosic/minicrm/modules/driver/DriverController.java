@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/drivers")
+@RequestMapping("/drivers")
 @Slf4j
 @RequiredArgsConstructor
 @Tag(name = "Drivers", description = "Endpoints for managing drivers and their remuneration settings")

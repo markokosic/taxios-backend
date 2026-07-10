@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/reports")
 @Slf4j
 @RequiredArgsConstructor
 @Tag(name = "Reports", description = "Endpoints for generating financial reports and dashboard analytics")
