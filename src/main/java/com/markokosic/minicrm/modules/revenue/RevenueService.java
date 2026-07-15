@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,8 +33,8 @@ public class RevenueService {
 	private final RemunerationService remunerationService;
 	private final CarRepository carRepository;
 
-	public PageResponseDTO<DailyRevenueResponseDTO> getAllRevenues (Pageable pageable) {
-		Page<DailyRevenueResponseDTO> page = dailyRevenueRepository.findAll(pageable).map(revenueMapper::toDto);;
+	public PageResponseDTO<DailyRevenueResponseDTO> getAllRevenues (Long driverId, LocalDate dateFrom, LocalDate dateTo, Pageable pageable) {
+		Page<DailyRevenueResponseDTO> page = dailyRevenueRepository.findAllFiltered(driverId, dateFrom, dateTo, pageable).map(revenueMapper::toDto);
 	return PageResponseDTO.from(page);
 	}
 

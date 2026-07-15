@@ -19,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/cars")
+@RequestMapping("/cars")
 @RequiredArgsConstructor
 @Tag(name = "Cars", description = "Endpoints for managing vehicles in the CRM")
 public class CarController {
