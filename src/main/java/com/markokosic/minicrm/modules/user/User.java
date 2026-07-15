@@ -27,7 +27,6 @@ public class User {
 
     @TenantId
     @Column(name = "tenant_id", nullable = false, updatable = false)
-    @NotNull
     private Long tenantId;
 
     @Column(name="first_name")

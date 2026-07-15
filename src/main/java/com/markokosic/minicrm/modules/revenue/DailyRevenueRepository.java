@@ -31,4 +31,18 @@ public interface DailyRevenueRepository extends JpaRepository<DailyRevenue, Long
     @EntityGraph(attributePaths = {"driver", "car", "remunerationConfig"})
     Page<DailyRevenue> findAll(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"driver", "car", "remunerationConfig"})
+    @Query("""
+        SELECT dr FROM DailyRevenue dr
+        WHERE (:driverId IS NULL OR dr.driver.id = :driverId)
+        AND (cast(:dateFrom as date) IS NULL OR dr.date >= :dateFrom)
+        AND (cast(:dateTo as date) IS NULL OR dr.date <= :dateTo)
+    """)
+    Page<DailyRevenue> findAllFiltered(
+            @Param("driverId") Long driverId,
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTo") LocalDate dateTo,
+            Pageable pageable
+    );
+
 }

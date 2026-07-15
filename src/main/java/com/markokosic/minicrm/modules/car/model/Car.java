@@ -23,7 +23,6 @@ public class Car {
 
     @TenantId
     @Column(name = "tenant_id", nullable = false, updatable = false)
-    @NotNull
     private Long tenantId;
 
     @Column(name = "license_plate", nullable = false)
