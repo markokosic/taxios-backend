@@ -11,6 +11,5 @@ import java.util.Optional;
 
 @Repository
 public interface CarRepository extends JpaRepository<Car, Long> {
-    Optional<Car> findByIdAndTenantId(Long id, Long tenantId);
-    Page<Car> findAllByTenantIdAndStatus(Long tenantId, CarStatus status, Pageable pageable);
+    Page<Car> findAllByStatus(CarStatus status, Pageable pageable);
 }

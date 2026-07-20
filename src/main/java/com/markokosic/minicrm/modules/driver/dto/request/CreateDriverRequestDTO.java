@@ -1,6 +1,7 @@
 package com.markokosic.minicrm.modules.driver.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.util.List;
@@ -11,24 +12,26 @@ public record CreateDriverRequestDTO(
 
 		@NotBlank(message = "{validation.notBlank}")
 		@Size(max = 50, message = "{driver.firstName.size}")
-		@Schema(description = "The driver's first name", example = "Max")
+		@Schema(description = "The driver's first name", example = "Max", requiredMode = Schema.RequiredMode.REQUIRED)
 		String firstName,
 
 		@NotBlank(message = "{validation.notBlank}")
 		@Size(max = 50, message = "{driver.lastName.size}")
-		@Schema(description = "The driver's last name", example = "Mustermann")
+		@Schema(description = "The driver's last name", example = "Mustermann", requiredMode = Schema.RequiredMode.REQUIRED)
 		String lastName,
 
 		@NotBlank(message = "{validation.notBlank}")
 		@Email(message = "{validation.email.invalid}")
-		@Schema(description = "Primary contact email address", example = "max.mustermann@example.com")
+		@Schema(description = "Primary contact email address", example = "max.mustermann@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
 		String email,
 
+		@NotBlank(message = "{validation.notBlank}")
 		@Pattern(regexp = "^\\+?[0-9\\s\\-]{7,20}$", message = "{driver.phone.invalid}")
-		@Schema(description = "International phone number format", example = "+43 660 1234567")
+		@Schema(description = "International phone number format", example = "+43 660 1234567", requiredMode = Schema.RequiredMode.REQUIRED)
 		String phone,
 
-		@NotNull(message = "{driver.remunerationModel.notNull}")
-		@Schema(description = "The internal remuneration models assigned to the driver")
+		@NotEmpty(message = "{driver.remunerationModel.notEmpty}")
+		@Valid
+		@Schema(description = "The internal remuneration models assigned to the driver", requiredMode = Schema.RequiredMode.REQUIRED)
 		List<CreateRemunerationRequestDTO> remunerationConfigs
 ) {}

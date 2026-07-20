@@ -2,6 +2,7 @@ package com.markokosic.minicrm.modules.revenue;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,19 +18,31 @@ public interface DailyRevenueRepository extends JpaRepository<DailyRevenue, Long
         JOIN FETCH dr.driver
         JOIN FETCH dr.car
         WHERE dr.date BETWEEN :dateFrom AND :dateTo
-        AND dr.tenantId = :tenantId
         AND (:driverId IS NULL OR dr.driver.id = :driverId)
         ORDER BY dr.date ASC
     """)
     List<DailyRevenue> findRawRevenues(
             @Param("dateFrom") LocalDate dateFrom,
             @Param("dateTo") LocalDate dateTo,
-            @Param("tenantId") Long tenantId,
             @Param("driverId") Long driverId
     );
 
-    Page<DailyRevenue> findAllByTenantId(Long tenantId, Pageable pageable);
+    @Override
+    @EntityGraph(attributePaths = {"driver", "car", "remunerationConfig"})
+    Page<DailyRevenue> findAll(Pageable pageable);
 
-    Optional<DailyRevenue> findByIdAndTenantId(Long id, Long tenantId);
+    @EntityGraph(attributePaths = {"driver", "car", "remunerationConfig"})
+    @Query("""
+        SELECT dr FROM DailyRevenue dr
+        WHERE (:driverId IS NULL OR dr.driver.id = :driverId)
+        AND (cast(:dateFrom as date) IS NULL OR dr.date >= :dateFrom)
+        AND (cast(:dateTo as date) IS NULL OR dr.date <= :dateTo)
+    """)
+    Page<DailyRevenue> findAllFiltered(
+            @Param("driverId") Long driverId,
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTo") LocalDate dateTo,
+            Pageable pageable
+    );
 
 }

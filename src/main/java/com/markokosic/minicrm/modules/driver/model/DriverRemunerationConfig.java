@@ -6,6 +6,7 @@ import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.TenantId;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,7 +27,8 @@ public abstract class DriverRemunerationConfig {
 	@JoinColumn(name = "driver_id", nullable = false)
 	private Driver driver;
 
-	@Column(name = "tenant_id", nullable = false)
+	@TenantId
+	@Column(name = "tenant_id", nullable = false, updatable = false)
 	private Long tenantId;
 
 	@Column(name = "is_current_remuneration", nullable = false)
