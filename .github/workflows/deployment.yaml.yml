@@ -1,0 +1,56 @@
+name: deploy-backend
+
+on:
+  push:
+    branches:
+      - main
+      - stage
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tailscale connection
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: SSH into VPS and Deploy Backend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              TARGET_DIR="taxi"
+            elif [ "${{ github.ref_name }}" = "stage" ]; then
+              TARGET_DIR="taxi-stage"
+            else
+              echo "Branch ${{ github.ref_name }} not supported"
+              exit 1
+            fi
+
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              echo "Production detected. Running DB Backup first..."
+              cd ~/apps/taxi
+            
+              docker compose exec -T db-backup sh backup.sh
+            
+              if [ $? -ne 0 ]; then
+                echo "DB Backup FAILED! Aborting deployment to protect production data."
+                exit 1
+              fi
+              echo "DB Backup successfully uploaded to S3."
+            fi
+
+            echo "Starting backend deployment: ~/apps/$TARGET_DIR/backend"
+
+            cd ~/apps/$TARGET_DIR/backend
+            git pull origin ${{ github.ref_name }}
+
+            cd ..
+
+            docker compose up --build -d backend
