@@ -26,12 +26,13 @@ public class AuthControllerIntegrationTest {
 	@Test
 	void testRegister_whenValidDetailsProvided_shouldReturnTenantDetails() throws JSONException {
 
+		String unique = String.valueOf(System.currentTimeMillis() % 100000000L);
 		JSONObject registerTenantDetailsRequestJson = new JSONObject();
-		registerTenantDetailsRequestJson.put("tenantName", "testTenant");
+		registerTenantDetailsRequestJson.put("tenantName", "tenant" + unique);
 		registerTenantDetailsRequestJson.put("password", "testPassword");
 		registerTenantDetailsRequestJson.put("firstName", "Max");
 		registerTenantDetailsRequestJson.put("lastName", "Mustermann");
-		registerTenantDetailsRequestJson.put("email", "test@email.com");
+		registerTenantDetailsRequestJson.put("email", "test" + unique + "@email.com");
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
