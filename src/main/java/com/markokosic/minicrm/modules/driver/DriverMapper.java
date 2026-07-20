@@ -20,13 +20,13 @@ public interface DriverMapper {
 				.toList();
 	}
 
-	@Mapping(target = "tenantId", expression = "java(tenantId)")
 	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "tenantId", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
 	@Mapping(target = "updatedAt", ignore = true)
 	@Mapping(target = "status", ignore = true)
 	@Mapping(target = "remunerationConfigs", ignore = true)
-	Driver toEntity(CreateDriverRequestDTO dto, @Context Long tenantId);
+	Driver toEntity(CreateDriverRequestDTO dto);
 
 	@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 	@Mapping(target ="remunerationConfigs", ignore = true)

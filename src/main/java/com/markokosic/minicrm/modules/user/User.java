@@ -3,10 +3,12 @@ package com.markokosic.minicrm.modules.user;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.TenantId;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.TenantId;
 
 
 @Entity
@@ -23,8 +25,8 @@ public class User {
     @Column(name="id")
     private Long id;
 
-    @Column(name = "tenant_id", nullable = false)
-    @NotNull
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
     private Long tenantId;
 
     @Column(name="first_name")

@@ -1,14 +1,12 @@
 package com.markokosic.minicrm.modules.car;
 
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
-import com.markokosic.minicrm.common.error.ApiErrorCode;
-import com.markokosic.minicrm.exception.NotFoundException;
 import com.markokosic.minicrm.modules.car.dto.request.CreateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.request.UpdateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.response.CarResponseDTO;
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.car.model.CarStatus;
-import com.markokosic.minicrm.modules.tenant.TenantService;
+import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +19,10 @@ public class CarService {
 
     private final CarRepository carRepository;
     private final CarMapper carMapper;
-    private final TenantService tenantService;
 
     @Transactional
     public CarResponseDTO createCar(CreateCarRequestDTO request) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-        Car car = carMapper.toEntity(request, tenantId);
+        Car car = carMapper.toEntity(request);
         carRepository.save(car);
         return carMapper.toDto(car);
     }
@@ -39,8 +35,7 @@ public class CarService {
 
     @Transactional(readOnly = true)
     public PageResponseDTO<CarResponseDTO> getAllCars(Pageable pageable) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-        Page<CarResponseDTO> page = carRepository.findAllByTenantIdAndStatus(tenantId, CarStatus.ACTIVE, pageable)
+        Page<CarResponseDTO> page = carRepository.findAllByStatus(CarStatus.ACTIVE, pageable)
                 .map(carMapper::toDto);
         return PageResponseDTO.from(page);
     }
@@ -57,15 +52,14 @@ public class CarService {
     public void deleteCar(Long id) {
         Car car = getCarOrThrow(id);
         if (CarStatus.DELETED.equals(car.getStatus())) {
-            throw new NotFoundException(ApiErrorCode.CAR_NOT_FOUND);
+            throw new ResourceNotFoundException("domain.car.not_found");
         }
         car.setStatus(CarStatus.DELETED);
         carRepository.save(car);
     }
 
     private Car getCarOrThrow(Long id) {
-        Long tenantId = tenantService.getTenantIdFromContextHolder();
-        return carRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(ApiErrorCode.CAR_NOT_FOUND));
+        return carRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("domain.car.not_found"));
     }
 }

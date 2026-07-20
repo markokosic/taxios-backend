@@ -6,8 +6,6 @@ import com.markokosic.minicrm.modules.tenant.TenantContextHolder;
 import com.markokosic.minicrm.modules.auth.service.JWTService;
 import com.markokosic.minicrm.modules.auth.service.UserDetailsServiceImpl;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;

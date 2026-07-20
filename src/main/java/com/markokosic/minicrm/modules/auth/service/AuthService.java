@@ -1,20 +1,19 @@
 package com.markokosic.minicrm.modules.auth.service;
 
 
-import com.markokosic.minicrm.common.error.ApiErrorCode;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
-import com.markokosic.minicrm.exception.AuthException;
-import com.markokosic.minicrm.exception.ValidationException;
 import com.markokosic.minicrm.modules.tenant.Tenant;
 import com.markokosic.minicrm.modules.user.User;
 import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
 import com.markokosic.minicrm.modules.tenant.TenantRepository;
 import com.markokosic.minicrm.modules.user.UserRepository;
+import com.markokosic.minicrm.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -45,7 +44,6 @@ public class AuthService {
 
     @Transactional
     public RegisterTenantResponseDTO registerNewTenant(RegisterTenantRequestDTO userAndTenantDto) {
-
         Tenant savedTenant = createTenant(userAndTenantDto.getTenantName());
         createUser(userAndTenantDto, savedTenant);
 
@@ -55,7 +53,7 @@ public class AuthService {
     public Tenant createTenant (String name) {
 
         if(tenantRepository.existsByName(name)){
-            throw new ValidationException(ApiErrorCode.TENANT_NAME_DUPLICATE);
+            throw new ResourceConflictException("domain.tenant.name.duplicate");
         }
 
         Tenant tenant = new Tenant();
@@ -65,16 +63,16 @@ public class AuthService {
 
     public void createUser (RegisterTenantRequestDTO request, Tenant tenant) {
         if(userRepository.existsByEmail(request.getEmail())){
-            throw new ValidationException(ApiErrorCode.VALIDATION_EMAIL_DUPLICATE);
+            throw new ResourceConflictException("domain.user.email.duplicate");
         }
 
-        User newUser = new User();
-        newUser.setTenantId(tenant.getId());
-        newUser.setEmail(request.getEmail());
-        newUser.setFirstName(request.getFirstName());
-        newUser.setLastName(request.getLastName());
-        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(newUser);
+        userRepository.insertUser(
+            request.getEmail(),
+            request.getFirstName(),
+            request.getLastName(),
+            passwordEncoder.encode(request.getPassword()),
+            tenant.getId()
+        );
     }
 
 
@@ -84,7 +82,7 @@ public class AuthService {
         Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail());
 
         if (optionalUser.isEmpty()) {
-            throw new AuthException(ApiErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new UnauthorizedException("auth.invalid_credentials");
         }
 
         User user = optionalUser.get();
@@ -101,7 +99,7 @@ public class AuthService {
             return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
 
         } catch (AuthenticationException ex) {
-            throw new AuthException(ApiErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new UnauthorizedException("auth.invalid_credentials");
 
         }
     }
@@ -120,13 +118,13 @@ public class AuthService {
     public String refreshAccessToken(String refreshToken){
         //1. checkk if refreshToken is received
         if(refreshToken.isEmpty()){
-            throw new ValidationException(ApiErrorCode.AUTH_NO_TOKEN_RECEIVED);
+            throw new UnauthorizedException("auth.token.no-token-received");
         }
 
         //2 validate refresh token, if not valid return UNAUTH, please login again
         boolean isSignedAndValid = jwtService.validateRefreshToken(refreshToken);
         if(!isSignedAndValid){
-            throw new AuthException(ApiErrorCode.AUTH_TOKEN_EXPIRED);
+            throw new UnauthorizedException("auth.token.expired");
         };
 
         String username = jwtService.extractEmail(refreshToken);

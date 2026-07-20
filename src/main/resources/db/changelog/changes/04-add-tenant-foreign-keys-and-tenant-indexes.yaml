@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-tenant-id-indexes
+      author: mkosic
+      changes:
+        - createIndex:
+            tableName: cars
+            indexName: idx_cars_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: driver_remuneration_configs
+            indexName: idx_driver_remuneration_configs_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: drivers
+            indexName: idx_drivers_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: daily_revenue
+            indexName: idx_daily_revenue_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: users
+            indexName: idx_users_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+
+  - changeSet:
+      id: add-tenant-foreign-keys
+      author: mkosic
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: cars
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_cars_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: driver_remuneration_configs
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_driver_remuneration_configs_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: drivers
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_drivers_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: daily_revenue
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_daily_revenue_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_users_tenant
+            onDelete: RESTRICT

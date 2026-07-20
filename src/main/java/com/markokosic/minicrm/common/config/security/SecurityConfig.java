@@ -1,6 +1,7 @@
 package com.markokosic.minicrm.common.config.security;
 
 import com.markokosic.minicrm.common.config.security.filter.JwtFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,23 +17,55 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    private JwtFilter jwtFilter;
+    private final JwtFilter jwtFilter;
+    private final UserDetailsService userDetailsService;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+    @Value("${swagger.security.username:developer}")
+    private String swaggerUsername;
 
-    @Autowired
-    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-
+    @Value("${swagger.security.password:minicrm-swagger-2026}")
+    private String swaggerPassword;
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
+                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("SWAGGER_ADMIN"))
+                .httpBasic(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
+                .authenticationProvider(swaggerAuthenticationProvider())
+                .build();
+    }
+
+    private AuthenticationProvider swaggerAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder());
+        provider.setUserDetailsService(username -> {
+            if (swaggerUsername.equals(username)) {
+                return org.springframework.security.core.userdetails.User.withUsername(swaggerUsername)
+                        .password(passwordEncoder().encode(swaggerPassword))
+                        .roles("SWAGGER_ADMIN")
+                        .build();
+            }
+            throw new UsernameNotFoundException("Swagger user not found");
+        });
+        return provider;
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(customizer -> customizer.disable())
