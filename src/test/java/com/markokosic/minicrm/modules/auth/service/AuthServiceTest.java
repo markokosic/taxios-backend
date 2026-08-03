@@ -91,13 +91,16 @@ public class AuthServiceTest {
 		dto.setEmail("test@test.com");
 
 		Mockito.when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-		Mockito.when(userRepository.save(Mockito.any(User.class)))
-				.thenAnswer(invocation -> invocation.getArgument(0));
-
 		authService.createUser(dto, tenant);
 
 		Mockito.verify(userRepository, Mockito.times(1)).existsByEmail(dto.getEmail());
-		Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any(User.class));
+		Mockito.verify(userRepository, Mockito.times(1)).insertUser(
+				Mockito.eq("test@test.com"),
+				Mockito.eq("Max"),
+				Mockito.eq("Mustermann"),
+				Mockito.any(),
+				Mockito.eq(100L)
+		);
 
 
 	}
