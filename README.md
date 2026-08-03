@@ -2,12 +2,12 @@
 
 Multi-tenant backend platform for managing taxi fleets, shift revenues, driver remuneration models, and financial reports.
 
-### Live Stage Environment & API Documentation
+### 🚀 Live Stage Environment & API Documentation
 
-| Resource                | Link |
-|:------------------------| :--- |
-| **Swagger API Docs**    | [https://taxi-stage.mk0.me/swagger-ui](https://taxi-stage.mk0.me/swagger-ui/index.html#/) |
-| **Stage Environment** | [https://taxi-stage.mk0.me](https://taxi-stage.mk0.me) |
+| Resource | Link |
+| :--- | :--- |
+| 🛠️ **Swagger API Docs** | [Open Interactive Swagger UI](https://taxi-stage.mk0.me/api/swagger-ui/index.html#/) |
+| 🌐 **Stage Environment** | [https://taxi-stage.mk0.me](https://taxi-stage.mk0.me) |
 
 > **Demo Credentials**
 > - **Email:** `test@tenant.com`
@@ -304,8 +304,8 @@ Backend API will be accessible at `http://localhost:8080`.
 ## API Documentation & HTTP Testing
 
 ### Interactive Swagger UI & OpenAPI 3.0
-- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
-- **OpenAPI JSON Spec:** `http://localhost:8080/v3/api-docs`
+- **Swagger UI:** `http://localhost:8080/api/swagger-ui.html` (oder `/api/swagger-ui/index.html`)
+- **OpenAPI JSON Spec:** `http://localhost:8080/api/v3/api-docs`
 
 ### HTTP Request Collection
 The `requests/` directory contains pre-configured HTTP request files for IntelliJ / VS Code REST Client testing:
