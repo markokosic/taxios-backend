@@ -118,7 +118,7 @@ graph TD
     end
     
     subgraph "Data & Storage Layer"
-        RepoLayer -->|@TenantId Filtered Queries| PostgresDB[("🐘 PostgreSQL Database")]
+        RepoLayer -->|"@TenantId Filtered Queries"| PostgresDB[("🐘 PostgreSQL Database")]
         Liquibase["📜 Liquibase Migrations"] -->|Schema Updates| PostgresDB
     end
 ```
