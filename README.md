@@ -2,8 +2,16 @@
 
 Multi-tenant backend platform for managing taxi fleets, shift revenues, driver remuneration models, and financial reports.
 
-**Stage Environment:** https://taxi-stage.example.com/api  
-**Email:** user@tenant.com | **Password:** <your_password>
+### Live Stage Environment & API Documentation
+
+| Resource                | Link |
+|:------------------------| :--- |
+| **Swagger API Docs**    | [https://taxi-stage.mk0.me/swagger-ui](https://taxi-stage.mk0.me/swagger-ui/index.html#/) |
+| **Stage Environment** | [https://taxi-stage.mk0.me](https://taxi-stage.mk0.me) |
+
+> **Demo Credentials**
+> - **Email:** `test@tenant.com`
+> - **Password:** `TestTenant123`
 
 **Repositories:**  
 - **Backend:** https://github.com/markokosic/taxios-backend  
