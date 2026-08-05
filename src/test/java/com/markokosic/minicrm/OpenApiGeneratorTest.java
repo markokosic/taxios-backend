@@ -24,7 +24,7 @@ class OpenApiGeneratorTest {
     @WithMockUser(roles = "SWAGGER_ADMIN")
     void generateOpenApiSpec() throws Exception {
         // Ruft den OpenAPI /v3/api-docs Endpunkt über MockMvc ab
-        String openApiJson = mockMvc.perform(MockMvcRequestBuilders.get("/v3/api-docs"))
+        String openApiJson = mockMvc.perform(MockMvcRequestBuilders.get("/api/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
