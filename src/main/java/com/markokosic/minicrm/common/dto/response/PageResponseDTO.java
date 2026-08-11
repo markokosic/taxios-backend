@@ -30,7 +30,7 @@ public class PageResponseDTO<T> {
 	public static <T> PageResponseDTO<T> from(Page<T> page) {
 		return new PageResponseDTO<>(
 				page.getContent(),
-				page.getNumber(),
+				page.getNumber() + 1,
 				page.getSize(),
 				page.getTotalElements(),
 				page.getTotalPages(),

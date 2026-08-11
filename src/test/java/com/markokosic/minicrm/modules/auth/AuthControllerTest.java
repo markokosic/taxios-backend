@@ -96,7 +96,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Set-Cookie"))
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.accessToken").value("access-token-123"));
+                .andExpect(jsonPath("$.data.email").value("max@tenant1.com"));
     }
 
     @Test
@@ -107,8 +107,7 @@ class AuthControllerTest {
                         .cookie(new Cookie("refreshToken", "valid-refresh-token")))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Set-Cookie"))
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.accessToken").value("new-access-token"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test

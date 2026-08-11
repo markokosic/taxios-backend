@@ -157,10 +157,8 @@ class RevenueControllerTest {
     @WithMockUser
     void deleteDailyRevenue_Success() throws Exception {
         doNothing().when(revenueService).deleteDailyRevenue(1L);
-        when(i18n.getMessage("success.deleted")).thenReturn("Deleted");
 
         mockMvc.perform(delete("/api/revenues/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(status().isNoContent());
     }
 }

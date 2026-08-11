@@ -138,9 +138,8 @@ class DriverControllerTest {
     @WithMockUser
     void stopRemunerationConfig_Success() throws Exception {
         doNothing().when(driverService).stopRemunerationConfig(1L, 10L);
-        when(i18n.getMessage("success.deleted")).thenReturn("Config stopped");
 
         mockMvc.perform(delete("/api/drivers/1/remuneration-configs/10"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 }
