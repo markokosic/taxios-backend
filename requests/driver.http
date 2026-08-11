@@ -117,7 +117,7 @@ Cookie: accessToken={{accessToken}}
 }
 
 ### 2. Get All Drivers (Paginated)
-GET {{host}}{{api}}?page=0&size=10
+GET {{host}}{{api}}?page=1&size=10
 Cookie: accessToken={{accessToken}}
 
 ### 3. Get Driver by ID
