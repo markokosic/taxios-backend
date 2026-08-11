@@ -4,16 +4,21 @@ import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +27,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/revenues")
+@RequestMapping(value = "/revenues", produces = MediaType.APPLICATION_JSON_VALUE)
 @Slf4j
 @RequiredArgsConstructor
 @Validated
@@ -35,8 +40,8 @@ public class RevenueController {
 	@PostMapping("/bulk")
 	@Operation(summary = "Bulk create daily revenues", description = "Logs multiple daily revenue entries for drivers at once.")
 	@ApiResponse(responseCode = "201", description = "Daily revenues logged successfully")
-	@ApiResponse(responseCode = "400", description = "Invalid daily revenue logs payload")
-	@ApiResponse(responseCode = "401", description = "Unauthorized")
+	@ApiResponse(responseCode = "400", description = "Invalid daily revenue logs payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	public ResponseEntity<ApiResponseDTO<Void>> createDailyRevenuesBulk(@Valid @RequestBody List<CreateDailyRevenueRequestDTO> request){
 		revenueService.createDailyRevenuesBulk(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, null, i18n.getMessage("success.added")));
@@ -45,12 +50,12 @@ public class RevenueController {
 	@GetMapping
 	@Operation(summary = "Get all daily revenues", description = "Retrieves a paginated list of logged daily revenues.")
 	@ApiResponse(responseCode = "200", description = "Revenues list retrieved successfully")
-	@ApiResponse(responseCode = "401", description = "Unauthorized")
+	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	public ResponseEntity<ApiResponseDTO<PageResponseDTO<DailyRevenueResponseDTO>>> getAllDailyRevenues(
 			@RequestParam(required = false) Long driverId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
-			@PageableDefault(sort = {"date", "drivingStartTime"}, direction = Sort.Direction.DESC) Pageable pageable){
+			@ParameterObject @PageableDefault(sort = {"date", "drivingStartTime"}, direction = Sort.Direction.DESC) Pageable pageable){
 		PageResponseDTO<DailyRevenueResponseDTO> revenues = revenueService.getAllRevenues(driverId, dateFrom, dateTo, pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, revenues, i18n.getMessage("success.fetched")));
 	}
@@ -58,9 +63,9 @@ public class RevenueController {
 	@PutMapping("/{id}")
 	@Operation(summary = "Update a daily revenue log", description = "Modifies an existing daily revenue log.")
 	@ApiResponse(responseCode = "200", description = "Daily revenue log updated successfully")
-	@ApiResponse(responseCode = "400", description = "Invalid request payload")
-	@ApiResponse(responseCode = "404", description = "Daily revenue log not found")
-	@ApiResponse(responseCode = "401", description = "Unauthorized")
+	@ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "404", description = "Daily revenue log not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	public ResponseEntity<ApiResponseDTO<DailyRevenueResponseDTO>> updateDailyRevenue(
 			@PathVariable Long id,
 			@Valid @RequestBody CreateDailyRevenueRequestDTO request) {
@@ -71,14 +76,13 @@ public class RevenueController {
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Delete a daily revenue log", description = "Permanently deletes a logged daily revenue entry.")
-	@ApiResponse(responseCode = "200", description = "Daily revenue log deleted successfully")
-	@ApiResponse(responseCode = "404", description = "Daily revenue log not found")
-	@ApiResponse(responseCode = "401", description = "Unauthorized")
-	public ResponseEntity<ApiResponseDTO<Void>> deleteDailyRevenue(
+	@ApiResponse(responseCode = "204", description = "Daily revenue log deleted successfully")
+	@ApiResponse(responseCode = "404", description = "Daily revenue log not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	public ResponseEntity<Void> deleteDailyRevenue(
 			@PathVariable Long id) {
-		 revenueService.deleteDailyRevenue(id);
-		return ResponseEntity.status(HttpStatus.OK)
-				.body(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
+		revenueService.deleteDailyRevenue(id);
+		return ResponseEntity.noContent().build();
 	}
 
 }
