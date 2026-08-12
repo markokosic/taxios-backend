@@ -6,6 +6,7 @@ import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
+import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.auth.service.AuthService;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
@@ -55,13 +56,21 @@ class AuthControllerTest {
     @Test
     @WithMockUser
     void getMe_Success() throws Exception {
-        UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
-        when(authService.getMe()).thenReturn(userDTO);
+        MeResponseDTO meDTO = MeResponseDTO.builder()
+                .id(1L)
+                .firstName("Max")
+                .lastName("Mustermann")
+                .email("max@example.com")
+                .tenantId(10L)
+                .tenantName("TestTenant")
+                .build();
+        when(authService.getMe()).thenReturn(meDTO);
 
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.email").value("max@example.com"));
+                .andExpect(jsonPath("$.data.email").value("max@example.com"))
+                .andExpect(jsonPath("$.data.tenantName").value("TestTenant"));
     }
 
     @Test
