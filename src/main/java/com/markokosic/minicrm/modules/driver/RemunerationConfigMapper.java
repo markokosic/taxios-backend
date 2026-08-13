@@ -13,13 +13,13 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.PercentageShareRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.WeeklyFixedRateRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.FlatRateRemunerationConfig;
+import com.markokosic.minicrm.modules.shift.FlatRateType;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface RemunerationConfigMapper {
-
 
 	default DriverRemunerationConfig toEntity(
 			CreateRemunerationRequestDTO dto,
@@ -30,7 +30,7 @@ public interface RemunerationConfigMapper {
 		} else if (dto instanceof CreateWeeklyFixedRemunerationConfigDTO weeklyDto) {
 			return toWeeklyFixedEntity(weeklyDto, driver);
 		} else if (dto instanceof CreateFlatRateRemunerationConfigDTO flatDto) {
-			return toFlatRateEntity(flatDto, driver);
+			return toFlatRateEntity(flatDto, driver, null);
 		}
 		throw new IllegalArgumentException("Unknown DTO type: " + dto.getClass());
 	}
@@ -47,11 +47,11 @@ public interface RemunerationConfigMapper {
 	}
 
 	@Mapping(target = "id", ignore = true)
-//	@Mapping(target = "driver", ignore = true)
 	@Mapping(target = "tenantId", ignore = true)
 	@Mapping(target = "current", ignore = true)
 	@Mapping(target = "validFrom", ignore = true)
 	@Mapping(target = "validUntil", ignore = true)
+	@Mapping(target = "flatRateType", ignore = true)
 	@Mapping(target = "driverRevenueSharePercentage", source = "driverRevenueSharePercentage")
 	@Mapping(target = "minDriverPayout", source = "minDriverPayout")
 	PercentageShareRemunerationConfig toPercentageShareEntity(
@@ -60,11 +60,11 @@ public interface RemunerationConfigMapper {
 	);
 
 	@Mapping(target = "id", ignore = true)
-//	@Mapping(target = "driver", ignore = true)
 	@Mapping(target = "tenantId", ignore = true)
 	@Mapping(target = "current", ignore = true)
 	@Mapping(target = "validFrom", ignore = true)
 	@Mapping(target = "validUntil", ignore = true)
+	@Mapping(target = "flatRateType", ignore = true)
 	@Mapping(target = "weeklyFixedCompanySettlement", source = "weeklyFixedCompanySettlement")
 	WeeklyFixedRateRemunerationConfig toWeeklyFixedEntity(
 			CreateWeeklyFixedRemunerationConfigDTO dto,
@@ -76,10 +76,12 @@ public interface RemunerationConfigMapper {
 	@Mapping(target = "current", ignore = true)
 	@Mapping(target = "validFrom", ignore = true)
 	@Mapping(target = "validUntil", ignore = true)
-	@Mapping(target = "flatRateFee", source = "flatRateFee")
+	@Mapping(target = "flatRateFee", source = "dto.flatRateFee")
+	@Mapping(target = "flatRateType", source = "flatRateType")
 	FlatRateRemunerationConfig toFlatRateEntity(
 			CreateFlatRateRemunerationConfigDTO dto,
-			@Context Driver driver
+			@Context Driver driver,
+			FlatRateType flatRateType
 	);
 
 	@Mapping(target = "remunerationModelType", source = "type")
@@ -89,7 +91,7 @@ public interface RemunerationConfigMapper {
 	WeeklyFixedRateRemunerationResponseDTO toWeeklyFixedResponseDto(WeeklyFixedRateRemunerationConfig entity);
 
 	@Mapping(target = "remunerationModelType", source = "type")
+	@Mapping(source = "flatRateType.id", target = "flatRateTypeId")
+	@Mapping(source = "flatRateType.name", target = "flatRateTypeName")
 	FlatRateRemunerationResponseDTO toFlatRateResponseDto(FlatRateRemunerationConfig entity);
-
-
 }

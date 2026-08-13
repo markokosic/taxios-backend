@@ -12,6 +12,7 @@ import jakarta.validation.constraints.DecimalMin;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -33,13 +34,12 @@ public class FlatRateRemunerationConfig extends DriverRemunerationConfig {
 		if (!(dto instanceof CreateFlatRateRemunerationConfigDTO fDto)) {
 			return false;
 		}
-		return areEqual(this.flatRateFee, fDto.flatRateFee());
+		Long currentTypeId = getFlatRateType() != null ? getFlatRateType().getId() : null;
+		return areEqual(this.flatRateFee, fDto.flatRateFee()) && Objects.equals(currentTypeId, fDto.flatRateTypeId());
 	}
-
 
 	@Override
 	public RemunerationSplit calculateRemuneration(BigDecimal revenue) {
 		return new FlatRateRemunerationCalculator().calculateRemuneration(revenue, this);
 	}
-
 }

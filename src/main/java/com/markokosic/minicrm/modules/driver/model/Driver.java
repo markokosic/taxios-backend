@@ -114,6 +114,28 @@ public class Driver {
 				.orElse(null);
 	}
 
+	public DriverRemunerationConfig getRemunerationConfigForEntry(com.markokosic.minicrm.modules.shift.ShiftEntryCategory category, com.markokosic.minicrm.modules.shift.FlatRateType flatRateType) {
+		if (category == com.markokosic.minicrm.modules.shift.ShiftEntryCategory.FLAT_RATE && flatRateType != null) {
+			Optional<DriverRemunerationConfig> specificConfig = this.remunerationConfigs.stream()
+					.filter(c -> c.isCurrent() && c.getFlatRateType() != null && flatRateType.getId().equals(c.getFlatRateType().getId()))
+					.findFirst();
+			if (specificConfig.isPresent()) {
+				return specificConfig.get();
+			}
+		}
+
+		RemunerationModelType targetType = switch (category) {
+			case REGULAR -> RemunerationModelType.PERCENTAGE_SHARE;
+			case FLAT_RATE -> RemunerationModelType.FLAT_RATE;
+			case WEEKLY -> RemunerationModelType.WEEKLY_FIXED_RATE;
+		};
+
+		return this.remunerationConfigs.stream()
+				.filter(c -> c.isCurrent() && c.getType() == targetType && c.getFlatRateType() == null)
+				.findFirst()
+				.orElseGet(this::getCurrentRemunerationConfig);
+	}
+
 	public DriverRemunerationConfig getCurrentRemunerationConfigByType(RemunerationModelType type) {
 		return this.remunerationConfigs.stream()
 				.filter(c -> c.isCurrent() && c.getType() == type)

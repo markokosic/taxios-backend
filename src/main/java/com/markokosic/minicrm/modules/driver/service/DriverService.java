@@ -5,6 +5,7 @@ import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.CreateFlatRateRemunerationConfigDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
@@ -14,6 +15,8 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.DriverStatus;
 import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfigRepository;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
+import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.shift.FlatRateTypeRepository;
 import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -34,17 +37,18 @@ public class DriverService {
 	private final RemunerationConfigMapper remunerationConfigMapper;
 	private final DriverLookupService driverLookupService;
 	private final DriverRemunerationConfigRepository driverRemunerationConfigRepository;
+	private final FlatRateTypeRepository flatRateTypeRepository;
 
 	@Transactional
-	public DriverResponseDTO createDriver(CreateDriverRequestDTO request ) {
+	public DriverResponseDTO createDriver(CreateDriverRequestDTO request) {
 		Driver driver = driverMapper.toEntity(request);
 
 		List<DriverRemunerationConfig> configs = request.remunerationConfigs().stream()
-				.map(config -> remunerationConfigMapper.toEntity(config, driver))
+				.map(dto -> mapToRemunerationEntity(dto, driver))
 				.toList();
 
 		boolean hasDuplicates = configs.size() != configs.stream()
-				.map(DriverRemunerationConfig::getType)
+				.map(c -> c.getType() + "_" + (c.getFlatRateType() != null ? c.getFlatRateType().getId() : "ALL"))
 				.distinct()
 				.count();
 
@@ -60,12 +64,12 @@ public class DriverService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponseDTO<DriverResponseDTO> getAllDrivers(Pageable pageable ) {
+	public PageResponseDTO<DriverResponseDTO> getAllDrivers(Pageable pageable) {
 		return getDriversByTenant(pageable);
 	}
 
 	@Transactional(readOnly = true)
-	public  DriverResponseDTO getDriverById(Long id ) {
+	public DriverResponseDTO getDriverById(Long id) {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(id);
 		return driverMapper.toDto(driver, remunerationConfigMapper);
 	}
@@ -83,7 +87,12 @@ public class DriverService {
 
 		if (request.remunerationConfigs() != null) {
 			boolean hasDuplicates = request.remunerationConfigs().size() != request.remunerationConfigs().stream()
-					.map(CreateRemunerationRequestDTO::remunerationModelType)
+					.map(dto -> {
+						if (dto instanceof CreateFlatRateRemunerationConfigDTO flatDto) {
+							return dto.remunerationModelType() + "_" + (flatDto.flatRateTypeId() != null ? flatDto.flatRateTypeId() : "ALL");
+						}
+						return dto.remunerationModelType().name();
+					})
 					.distinct()
 					.count();
 
@@ -93,7 +102,7 @@ public class DriverService {
 
 			driver.syncRemunerationConfigs(
 					request.remunerationConfigs(),
-					dto -> remunerationConfigMapper.toEntity(dto, driver)
+					dto -> mapToRemunerationEntity(dto, driver)
 			);
 		}
 
@@ -115,6 +124,14 @@ public class DriverService {
 		driverRepository.save(driver);
 	}
 
+	private DriverRemunerationConfig mapToRemunerationEntity(CreateRemunerationRequestDTO dto, Driver driver) {
+		if (dto instanceof CreateFlatRateRemunerationConfigDTO flatDto && flatDto.flatRateTypeId() != null) {
+			FlatRateType flatRateType = flatRateTypeRepository.findById(flatDto.flatRateTypeId())
+					.orElseThrow(() -> new ResourceNotFoundException("domain.flat_rate_type.not_found"));
+			return remunerationConfigMapper.toFlatRateEntity(flatDto, driver, flatRateType);
+		}
+		return remunerationConfigMapper.toEntity(dto, driver);
+	}
 
 	private Driver validateDriverDeletion(Long id) {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(id);
@@ -123,20 +140,12 @@ public class DriverService {
 			throw new ResourceNotFoundException("domain.driver.not_found");
 		}
 
-//		if (hasActiveOrders(driver.getId())) {
-//			throw new ConflictException(ApiErrorCode.CUSTOMER_HAS_ACTIVE_ORDERS);
-//		}
-
 		return driver;
 	}
-
-
 
 	private PageResponseDTO<DriverResponseDTO> getDriversByTenant(Pageable pageable) {
 		Page<DriverResponseDTO> page = driverRepository.findAllByStatus(DriverStatus.ACTIVE, pageable)
 				.map(driver -> driverMapper.toDto(driver, remunerationConfigMapper));
 		return PageResponseDTO.from(page);
 	}
-
-
 }

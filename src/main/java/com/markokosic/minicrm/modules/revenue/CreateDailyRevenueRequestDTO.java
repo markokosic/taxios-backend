@@ -22,17 +22,14 @@ public record CreateDailyRevenueRequestDTO(
 		@PastOrPresent
 		LocalDate date,
 
-		@NotNull
-		@Positive
 		BigDecimal kilometersDriven,
 
 		@NotNull
 		BigDecimal revenue,
 
-		@NotNull
+
 		BigDecimal kilometersFrom,
 
-		@NotNull
 		BigDecimal kilometersTo,
 
 		@NotNull
