@@ -2,6 +2,8 @@ package com.markokosic.minicrm.modules.driver.model;
 
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -114,8 +116,14 @@ public class Driver {
 				.orElse(null);
 	}
 
-	public DriverRemunerationConfig getRemunerationConfigForEntry(com.markokosic.minicrm.modules.shift.ShiftEntryCategory category, com.markokosic.minicrm.modules.shift.FlatRateType flatRateType) {
-		if (category == com.markokosic.minicrm.modules.shift.ShiftEntryCategory.FLAT_RATE && flatRateType != null) {
+	public List<DriverRemunerationConfig> getActiveRemunerationConfigs() {
+		return this.remunerationConfigs.stream()
+				.filter(DriverRemunerationConfig::isCurrent)
+				.toList();
+	}
+
+	public DriverRemunerationConfig getRemunerationConfigForEntry(ShiftEntryCategory category, FlatRateType flatRateType) {
+		if (category == ShiftEntryCategory.FLAT_RATE && flatRateType != null) {
 			Optional<DriverRemunerationConfig> specificConfig = this.remunerationConfigs.stream()
 					.filter(c -> c.isCurrent() && c.getFlatRateType() != null && flatRateType.getId().equals(c.getFlatRateType().getId()))
 					.findFirst();

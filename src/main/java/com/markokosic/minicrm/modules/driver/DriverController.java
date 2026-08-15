@@ -6,6 +6,7 @@ import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
+import com.markokosic.minicrm.modules.driver.dto.response.DriverRevenueOptionDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.service.DriverService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,6 +57,14 @@ public class DriverController {
 		DriverResponseDTO driver = driverService.getDriverById(id);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, driver, i18n.getMessage("success.fetched")));
 	};
+
+	@GetMapping("/{id}/revenue-options")
+	@Operation(summary = "Get selectable revenue options for driver", description = "Fetches the list of selectable revenue categories and flat rate options for a driver.")
+	@ApiResponse(responseCode = "200", description = "Revenue options fetched successfully")
+	public ResponseEntity<ApiResponseDTO<List<DriverRevenueOptionDTO>>> getDriverRevenueOptions(@PathVariable Long id) {
+		List<DriverRevenueOptionDTO> options = driverService.getRevenueOptionsForDriver(id);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, options, i18n.getMessage("success.fetched")));
+	}
 
 	@GetMapping("/select")
 	@Operation(summary = "Get drivers list for dropdowns", description = "Retrieves a simplified list of drivers optimized for selection controls.")

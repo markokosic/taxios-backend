@@ -30,6 +30,8 @@ public record CreateShiftRequestDTO(
 		@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 		LocalDateTime shiftEnd,
 
+
+		//TODO REMOVE LATER WHEN RBAC IS IMPLEMENTED THAT STATE OF STATUS IS DEFINED BY BACKEND
 		ShiftStatus status,
 
 		@NotEmpty

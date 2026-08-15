@@ -9,16 +9,19 @@ import com.markokosic.minicrm.modules.driver.dto.request.CreateFlatRateRemunerat
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
+import com.markokosic.minicrm.modules.driver.dto.response.DriverRevenueOptionDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.DriverStatus;
 import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfigRepository;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
+import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.shift.FlatRateType;
 import com.markokosic.minicrm.modules.shift.FlatRateTypeRepository;
 import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
+import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -109,6 +112,47 @@ public class DriverService {
 		driverRepository.save(driver);
 		return driverMapper.toDto(driver, remunerationConfigMapper);
 
+	}
+
+	@Transactional(readOnly = true)
+	public List<DriverRevenueOptionDTO> getRevenueOptionsForDriver(Long driverId) {
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
+		List<DriverRemunerationConfig> activeConfigs = driver.getActiveRemunerationConfigs();
+
+		List<DriverRevenueOptionDTO> options = new java.util.ArrayList<>();
+
+		// 1. Regular Trips (Taxameter)
+		boolean hasPercentage = activeConfigs.stream()
+				.anyMatch(c -> c.getType() == RemunerationModelType.PERCENTAGE_SHARE);
+		if (hasPercentage) {
+			options.add(new DriverRevenueOptionDTO(
+					ShiftEntryCategory.REGULAR, null, "Regular Fare (Taxameter)", null
+			));
+		}
+
+		// 2. FlatRateTypes
+		boolean hasAnyFlatRate = activeConfigs.stream()
+				.anyMatch(c -> c.getType() == RemunerationModelType.FLAT_RATE);
+
+		if (hasAnyFlatRate) {
+			List<FlatRateType> flatRateTypes = flatRateTypeRepository.findAllByActiveTrue();
+			for (FlatRateType fr : flatRateTypes) {
+				options.add(new DriverRevenueOptionDTO(
+						ShiftEntryCategory.FLAT_RATE, fr.getId(), fr.getName(), fr.getDefaultPrice()
+				));
+			}
+		}
+
+		// 3. Weekly Rent option
+		boolean hasWeekly = activeConfigs.stream()
+				.anyMatch(c -> c.getType() == RemunerationModelType.WEEKLY_FIXED_RATE);
+		if (hasWeekly) {
+			options.add(new DriverRevenueOptionDTO(
+					ShiftEntryCategory.WEEKLY, null, "Weekly Fixed Fee / Rental", null
+			));
+		}
+
+		return options;
 	}
 
 	@Transactional
