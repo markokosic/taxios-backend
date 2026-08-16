@@ -9,7 +9,7 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,10 +53,23 @@ public class ShiftService {
 				throw new IllegalStateException("No valid remuneration config found for driver " + driver.getId() + " and category " + revenueReq.entryCategory());
 			}
 
-			BigDecimal effectiveRevenue = revenueReq.getEffectiveRevenue();
+			BigDecimal effectivePricePerTrip = revenueReq.pricePerTrip();
+			if (flatRateType != null && flatRateType.getDefaultPrice() != null) {
+				effectivePricePerTrip = flatRateType.getDefaultPrice();
+			}
+
+			BigDecimal effectiveRevenue;
+			if (revenueReq.revenue() != null) {
+				effectiveRevenue = revenueReq.revenue();
+			} else if (revenueReq.tripCount() != null && effectivePricePerTrip != null) {
+				effectiveRevenue = effectivePricePerTrip.multiply(BigDecimal.valueOf(revenueReq.tripCount()));
+			} else {
+				throw new IllegalArgumentException("Either 'revenue' or ('tripCount' and 'pricePerTrip') must be provided.");
+			}
+
 			RemunerationSplit split = remunerationService.calculateRemunerationSplitFromDailyRevenue(effectiveRevenue, config);
 
-			ShiftRevenueEntry entry = shiftMapper.toRevenueEntryEntity(revenueReq, shift, config, flatRateType, effectiveRevenue, split);
+			ShiftRevenueEntry entry = shiftMapper.toRevenueEntryEntity(revenueReq, shift, config, flatRateType, effectiveRevenue, effectivePricePerTrip, split);
 			shift.addRevenueEntry(entry);
 		}
 
@@ -64,11 +77,13 @@ public class ShiftService {
 		return shiftMapper.toDto(saved);
 	}
 
+	@Transactional(readOnly = true)
 	public PageResponseDTO<ShiftResponseDTO> getAllShifts(Long driverId, LocalDateTime dateFrom, LocalDateTime dateTo, Pageable pageable) {
 		Page<ShiftResponseDTO> page = shiftRepository.findAllFiltered(driverId, dateFrom, dateTo, pageable).map(shiftMapper::toDto);
 		return PageResponseDTO.from(page);
 	}
 
+	@Transactional(readOnly = true)
 	public ShiftResponseDTO getShiftById(Long id) {
 		Shift shift = shiftRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));

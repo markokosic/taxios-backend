@@ -50,7 +50,7 @@ class DriverControllerTest {
     @Test
     @WithMockUser
     void createDriver_Success() throws Exception {
-        var remConfig = new CreateFlatRateRemunerationConfigDTO(RemunerationModelType.FLAT_RATE, new BigDecimal("50.00"));
+        var remConfig = new CreateFlatRateRemunerationConfigDTO(RemunerationModelType.FLAT_RATE, new BigDecimal("15.00"), null);
         CreateDriverRequestDTO requestDTO = new CreateDriverRequestDTO("John", "Doe", "john@example.com", "+12345678", List.of(remConfig));
         DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
 

@@ -23,11 +23,9 @@ public record CreateShiftRequestDTO(
 		BigDecimal odometerEnd,
 
 		@NotNull
-		@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 		LocalDateTime shiftStart,
 
 		@NotNull
-		@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 		LocalDateTime shiftEnd,
 
 

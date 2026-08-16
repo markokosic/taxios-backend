@@ -54,6 +54,20 @@ public class Driver {
 	)
 	private List<DriverRemunerationConfig> remunerationConfigs = new ArrayList<>();
 
+	private String getConfigKey(DriverRemunerationConfig config) {
+		if (config.getType() == RemunerationModelType.FLAT_RATE) {
+			return config.getType() + "_" + (config.getFlatRateType() != null ? config.getFlatRateType().getId() : "ALL");
+		}
+		return config.getType().name();
+	}
+
+	private String getConfigKey(CreateRemunerationRequestDTO request) {
+		if (request instanceof com.markokosic.minicrm.modules.driver.dto.request.CreateFlatRateRemunerationConfigDTO flatDto) {
+			return request.remunerationModelType() + "_" + (flatDto.flatRateTypeId() != null ? flatDto.flatRateTypeId() : "ALL");
+		}
+		return request.remunerationModelType().name();
+	}
+
 	public void syncRemunerationConfigs(
 			List<CreateRemunerationRequestDTO> requests,
 			Function<CreateRemunerationRequestDTO, DriverRemunerationConfig> mapper
@@ -61,18 +75,18 @@ public class Driver {
 		LocalDate today = LocalDate.now();
 		LocalDate yesterday = today.minusDays(1);
 
-		// get current active configs by type
-		Map<RemunerationModelType, DriverRemunerationConfig> currentActiveMap = this.remunerationConfigs.stream()
+		// get current active configs by composite key
+		Map<String, DriverRemunerationConfig> currentActiveMap = this.remunerationConfigs.stream()
 				.filter(DriverRemunerationConfig::isCurrent)
-				.collect(Collectors.toMap(DriverRemunerationConfig::getType, c -> c));
+				.collect(Collectors.toMap(this::getConfigKey, c -> c));
 
-		Set<RemunerationModelType> typesInRequest = new HashSet<>();
+		Set<String> keysInRequest = new HashSet<>();
 
 		for (CreateRemunerationRequestDTO request : requests) {
-			RemunerationModelType type = request.remunerationModelType();
-			typesInRequest.add(type);
+			String key = getConfigKey(request);
+			keysInRequest.add(key);
 
-			DriverRemunerationConfig existing = currentActiveMap.get(type);
+			DriverRemunerationConfig existing = currentActiveMap.get(key);
 
 			if (existing != null) {
 				if (!existing.isIdenticalTo(request)) {
@@ -90,9 +104,9 @@ public class Driver {
 			}
 		}
 
-		//deactivate any types that were not in the request - basically delete a remuneration config.
+		//deactivate any configs that were not in the request - basically delete a remuneration config.
 		currentActiveMap.values().stream()
-				.filter(c -> !typesInRequest.contains(c.getType()))
+				.filter(c -> !keysInRequest.contains(getConfigKey(c)))
 				.forEach(c -> c.deactivate(yesterday));
 	}
 

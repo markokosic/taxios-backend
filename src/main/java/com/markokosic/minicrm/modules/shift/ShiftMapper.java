@@ -40,13 +40,14 @@ public interface ShiftMapper {
 	@Mapping(target = "companyRemuneration", source = "split.companyRemuneration")
 	@Mapping(target = "driverRemuneration", source = "split.driverRemuneration")
 	@Mapping(target = "tripCount", source = "dto.tripCount")
-	@Mapping(target = "pricePerTrip", source = "dto.pricePerTrip")
+	@Mapping(target = "pricePerTrip", source = "effectivePricePerTrip")
 	ShiftRevenueEntry toRevenueEntryEntity(
 			CreateShiftRevenueEntryRequestDTO dto,
 			Shift shift,
 			DriverRemunerationConfig config,
 			FlatRateType flatRateType,
 			BigDecimal effectiveRevenue,
+			BigDecimal effectivePricePerTrip,
 			RemunerationSplit split
 	);
 
