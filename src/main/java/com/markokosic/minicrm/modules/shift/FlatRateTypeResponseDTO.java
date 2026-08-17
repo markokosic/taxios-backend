@@ -6,5 +6,5 @@ public record FlatRateTypeResponseDTO(
 		Long id,
 		String name,
 		BigDecimal defaultPrice,
-		boolean active
+		FlatRateTypeStatus status
 ) {}
