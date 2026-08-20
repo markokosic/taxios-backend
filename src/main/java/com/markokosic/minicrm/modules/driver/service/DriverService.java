@@ -18,6 +18,7 @@ import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfig
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.shift.FlatRateTypeStatus;
 import com.markokosic.minicrm.modules.shift.FlatRateTypeRepository;
 import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
@@ -135,8 +136,8 @@ public class DriverService {
 				.anyMatch(c -> c.getType() == RemunerationModelType.FLAT_RATE);
 
 		if (hasAnyFlatRate) {
-			List<FlatRateType> flatRateTypes = flatRateTypeRepository.findAllByActiveTrue();
-			for (FlatRateType fr : flatRateTypes) {
+			List<FlatRateType> activeFlatRates = flatRateTypeRepository.findAllByCurrentIsTrueAndStatus(FlatRateTypeStatus.ACTIVE);
+			for (FlatRateType fr : activeFlatRates) {
 				options.add(new DriverRevenueOptionDTO(
 						ShiftEntryCategory.FLAT_RATE, fr.getId(), fr.getName(), fr.getDefaultPrice()
 				));

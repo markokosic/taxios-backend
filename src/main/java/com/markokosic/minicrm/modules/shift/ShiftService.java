@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,20 +54,8 @@ public class ShiftService {
 				throw new IllegalStateException("No valid remuneration config found for driver " + driver.getId() + " and category " + revenueReq.entryCategory());
 			}
 
-			BigDecimal effectivePricePerTrip = revenueReq.pricePerTrip();
-			if (flatRateType != null && flatRateType.getDefaultPrice() != null) {
-				effectivePricePerTrip = flatRateType.getDefaultPrice();
-			}
-
-			BigDecimal effectiveRevenue;
-			if (revenueReq.revenue() != null) {
-				effectiveRevenue = revenueReq.revenue();
-			} else if (revenueReq.tripCount() != null && effectivePricePerTrip != null) {
-				effectiveRevenue = effectivePricePerTrip.multiply(BigDecimal.valueOf(revenueReq.tripCount()));
-			} else {
-				throw new IllegalArgumentException("Either 'revenue' or ('tripCount' and 'pricePerTrip') must be provided.");
-			}
-
+			BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(revenueReq.pricePerTrip(), flatRateType);
+			BigDecimal effectiveRevenue = calculateEffectiveRevenue(revenueReq.revenue(), revenueReq.tripCount(), effectivePricePerTrip);
 			RemunerationSplit split = remunerationService.calculateRemunerationSplitFromDailyRevenue(effectiveRevenue, config);
 
 			ShiftRevenueEntry entry = shiftMapper.toRevenueEntryEntity(revenueReq, shift, config, flatRateType, effectiveRevenue, effectivePricePerTrip, split);
@@ -75,6 +64,60 @@ public class ShiftService {
 
 		Shift saved = shiftRepository.save(shift);
 		return shiftMapper.toDto(saved);
+	}
+
+	@Transactional
+	public ShiftResponseDTO updateShift(Long id, UpdateShiftRequestDTO request) {
+		Shift shift = shiftRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
+
+		updateShiftMetadata(shift, request);
+		updateRevenueEntries(shift, request.revenues());
+
+		Shift saved = shiftRepository.save(shift);
+		return shiftMapper.toDto(saved);
+	}
+
+	private void updateShiftMetadata(Shift shift, UpdateShiftRequestDTO request) {
+		shift.setOdometerStart(request.odometerStart());
+		shift.setOdometerEnd(request.odometerEnd());
+		shift.setShiftStart(request.shiftStart());
+		shift.setShiftEnd(request.shiftEnd());
+	}
+
+	private void updateRevenueEntries(Shift shift, List<UpdateShiftRevenueEntryRequestDTO> revenueRequests) {
+		for (UpdateShiftRevenueEntryRequestDTO revenueReq : revenueRequests) {
+			ShiftRevenueEntry entry = shift.getRevenues().stream()
+					.filter(e -> e.getId().equals(revenueReq.id()))
+					.findFirst()
+					.orElseThrow(() -> new ResourceNotFoundException("domain.shift_revenue_entry.not_found"));
+
+			BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(revenueReq.pricePerTrip(), entry.getFlatRateType());
+			BigDecimal effectiveRevenue = calculateEffectiveRevenue(revenueReq.revenue(), revenueReq.tripCount(), effectivePricePerTrip);
+			RemunerationSplit split = remunerationService.calculateRemunerationSplitFromDailyRevenue(effectiveRevenue, entry.getRemunerationConfig());
+
+			entry.setRevenue(effectiveRevenue);
+			entry.setPricePerTrip(effectivePricePerTrip);
+			entry.setTripCount(revenueReq.tripCount());
+			entry.setCompanyRemuneration(split.companyRemuneration());
+			entry.setDriverRemuneration(split.driverRemuneration());
+		}
+	}
+
+	private BigDecimal calculateEffectivePricePerTrip(BigDecimal requestedPricePerTrip, FlatRateType flatRateType) {
+		if (flatRateType != null && flatRateType.getDefaultPrice() != null) {
+			return flatRateType.getDefaultPrice();
+		}
+		return requestedPricePerTrip;
+	}
+
+	private BigDecimal calculateEffectiveRevenue(BigDecimal requestedRevenue, Long tripCount, BigDecimal effectivePricePerTrip) {
+		if (requestedRevenue != null) {
+			return requestedRevenue;
+		} else if (tripCount != null && effectivePricePerTrip != null) {
+			return effectivePricePerTrip.multiply(BigDecimal.valueOf(tripCount));
+		}
+		throw new IllegalArgumentException("Either 'revenue' or ('tripCount' and 'pricePerTrip') must be provided.");
 	}
 
 	@Transactional(readOnly = true)

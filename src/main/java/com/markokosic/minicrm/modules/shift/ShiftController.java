@@ -60,6 +60,16 @@ public class ShiftController {
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, shift, i18n.getMessage("success.fetched")));
 	}
 
+	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Update a shift", description = "Updates shift metadata (odometer, dates) and revenue amounts. Does not allow changing driver, car, or remuneration configs.")
+	@ApiResponse(responseCode = "200", description = "Shift updated successfully")
+	@ApiResponse(responseCode = "400", description = "Invalid shift data", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "404", description = "Shift not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> updateShift(@PathVariable Long id, @Valid @RequestBody UpdateShiftRequestDTO request) {
+		ShiftResponseDTO updated = shiftService.updateShift(id, request);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, updated, i18n.getMessage("success.updated")));
+	}
+
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Delete a shift")
 	public ResponseEntity<ApiResponseDTO<Void>> deleteShift(@PathVariable Long id) {

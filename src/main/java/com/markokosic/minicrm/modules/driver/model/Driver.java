@@ -56,16 +56,9 @@ public class Driver {
 
 	private String getConfigKey(DriverRemunerationConfig config) {
 		if (config.getType() == RemunerationModelType.FLAT_RATE) {
-			return config.getType() + "_" + (config.getFlatRateType() != null ? config.getFlatRateType().getId() : "ALL");
+			return config.getType() + "_" + (config.getFlatRateType() != null ? config.getFlatRateType().getFlatRateCode() : "ALL");
 		}
 		return config.getType().name();
-	}
-
-	private String getConfigKey(CreateRemunerationRequestDTO request) {
-		if (request instanceof com.markokosic.minicrm.modules.driver.dto.request.CreateFlatRateRemunerationConfigDTO flatDto) {
-			return request.remunerationModelType() + "_" + (flatDto.flatRateTypeId() != null ? flatDto.flatRateTypeId() : "ALL");
-		}
-		return request.remunerationModelType().name();
 	}
 
 	public void syncRemunerationConfigs(
@@ -83,7 +76,8 @@ public class Driver {
 		Set<String> keysInRequest = new HashSet<>();
 
 		for (CreateRemunerationRequestDTO request : requests) {
-			String key = getConfigKey(request);
+			DriverRemunerationConfig newConfig = mapper.apply(request);
+			String key = getConfigKey(newConfig);
 			keysInRequest.add(key);
 
 			DriverRemunerationConfig existing = currentActiveMap.get(key);
@@ -91,13 +85,11 @@ public class Driver {
 			if (existing != null) {
 				if (!existing.isIdenticalTo(request)) {
 					existing.deactivate(yesterday);
-					DriverRemunerationConfig newConfig = mapper.apply(request);
 					newConfig.activate(today);
 					newConfig.setDriver(this);
 					this.remunerationConfigs.add(newConfig);
 				}
 			} else {
-				DriverRemunerationConfig newConfig = mapper.apply(request);
 				newConfig.activate(today);
 				newConfig.setDriver(this);
 				this.remunerationConfigs.add(newConfig);
@@ -139,7 +131,7 @@ public class Driver {
 	public DriverRemunerationConfig getRemunerationConfigForEntry(ShiftEntryCategory category, FlatRateType flatRateType) {
 		if (category == ShiftEntryCategory.FLAT_RATE && flatRateType != null) {
 			Optional<DriverRemunerationConfig> specificConfig = this.remunerationConfigs.stream()
-					.filter(c -> c.isCurrent() && c.getFlatRateType() != null && flatRateType.getId().equals(c.getFlatRateType().getId()))
+					.filter(c -> c.isCurrent() && c.getFlatRateType() != null && flatRateType.getFlatRateCode().equals(c.getFlatRateType().getFlatRateCode()))
 					.findFirst();
 			if (specificConfig.isPresent()) {
 				return specificConfig.get();
