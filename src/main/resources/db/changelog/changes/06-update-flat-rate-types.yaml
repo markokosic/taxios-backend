@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: 06-add-versioning-and-status-to-flat-rate-types
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: flat_rate_types
+              columnName: is_current
+      changes:
+        - addColumn:
+            tableName: flat_rate_types
+            columns:
+              - column:
+                  name: status
+                  type: VARCHAR(31)
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: flat_rate_code
+                  type: VARCHAR(255)
+              - column:
+                  name: is_current
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: date
+                  defaultValueDate: "2024-01-01"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+
+  - changeSet:
+      id: 06-populate-flat-rate-code
+      author: mkosic
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: "UPDATE flat_rate_types SET flat_rate_code = md5(random()::text || id::text) WHERE flat_rate_code IS NULL;"
+        - addNotNullConstraint:
+            tableName: flat_rate_types
+            columnName: flat_rate_code
+            columnDataType: VARCHAR(255)
+            defaultNullValue: "DEFAULT_CODE"
+
+  - changeSet:
+      id: 06-migrate-and-drop-active-column
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: flat_rate_types
+            columnName: active
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: "UPDATE flat_rate_types SET status = 'DISABLED' WHERE active = false;"
+        - dropColumn:
+            tableName: flat_rate_types
+            columnName: active
