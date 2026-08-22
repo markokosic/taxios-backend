@@ -56,7 +56,7 @@ public class ShiftService {
 
 			BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(revenueReq.pricePerTrip(), flatRateType);
 			BigDecimal effectiveRevenue = calculateEffectiveRevenue(revenueReq.revenue(), revenueReq.tripCount(), effectivePricePerTrip);
-			RemunerationSplit split = remunerationService.calculateRemunerationSplitFromDailyRevenue(effectiveRevenue, config);
+			RemunerationSplit split = remunerationService.calculateRemunerationSplit(effectiveRevenue, config);
 
 			ShiftRevenueEntry entry = shiftMapper.toRevenueEntryEntity(revenueReq, shift, config, flatRateType, effectiveRevenue, effectivePricePerTrip, split);
 			shift.addRevenueEntry(entry);
@@ -94,7 +94,7 @@ public class ShiftService {
 
 			BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(revenueReq.pricePerTrip(), entry.getFlatRateType());
 			BigDecimal effectiveRevenue = calculateEffectiveRevenue(revenueReq.revenue(), revenueReq.tripCount(), effectivePricePerTrip);
-			RemunerationSplit split = remunerationService.calculateRemunerationSplitFromDailyRevenue(effectiveRevenue, entry.getRemunerationConfig());
+			RemunerationSplit split = remunerationService.calculateRemunerationSplit(effectiveRevenue, entry.getRemunerationConfig());
 
 			entry.setRevenue(effectiveRevenue);
 			entry.setPricePerTrip(effectivePricePerTrip);
