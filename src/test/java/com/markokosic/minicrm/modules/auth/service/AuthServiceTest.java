@@ -16,7 +16,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.markokosic.minicrm.exception.ResourceConflictException;
 
+import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
+import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -125,6 +131,36 @@ public class AuthServiceTest {
 		ResourceConflictException exception = assertThrows(ResourceConflictException.class, () -> {
 			authService.createUser(dto, tenant);
 		});
+	}
+
+	@Test
+	void testGetMe_Success() {
+		User user = new User();
+		user.setId(1L);
+		user.setTenantId(100L);
+		user.setEmail("test@test.com");
+		user.setFirstName("Max");
+		user.setLastName("Mustermann");
+
+		UserPrincipal principal = new UserPrincipal(user);
+		Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		Tenant tenant = new Tenant();
+		tenant.setId(100L);
+		tenant.setName("TEST TENANT");
+
+		Mockito.when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+		Mockito.when(tenantRepository.findById(100L)).thenReturn(Optional.of(tenant));
+
+		MeResponseDTO result = authService.getMe();
+
+		assertNotNull(result);
+		assertEquals("test@test.com", result.getEmail());
+		assertEquals("TEST TENANT", result.getTenantName());
+		assertEquals(100L, result.getTenantId());
+
+		SecurityContextHolder.clearContext();
 	}
 
 }

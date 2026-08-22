@@ -10,11 +10,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class RemunerationService {
 
-
-	public RemunerationSplit calculateRemunerationSplitFromDailyRevenue(BigDecimal dailyRevenue, DriverRemunerationConfig config) {
-
-		return config.calculateRemuneration(dailyRevenue);
-
+	public RemunerationSplit calculateRemunerationSplit(BigDecimal revenue, DriverRemunerationConfig config) {
+		return config.calculateRemuneration(revenue);
 	}
-
 }

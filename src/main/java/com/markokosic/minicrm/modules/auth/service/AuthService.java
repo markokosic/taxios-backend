@@ -7,6 +7,8 @@ import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
+import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
+import com.markokosic.minicrm.modules.user.UserMapper;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import com.markokosic.minicrm.modules.tenant.Tenant;
 import com.markokosic.minicrm.modules.user.User;
@@ -41,6 +43,7 @@ public class AuthService {
     private final JWTService jwtService;
     private final AuthenticationManager authenticationManager;
     private final TokenProperties tokenProperties;
+    private final UserMapper userMapper;
 
     @Transactional
     public RegisterTenantResponseDTO registerNewTenant(RegisterTenantRequestDTO userAndTenantDto) {
@@ -105,14 +108,25 @@ public class AuthService {
     }
 
 
-
-    public UserResponseDTO getMe() {
+    public MeResponseDTO getMe() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
-        UserResponseDTO userDto = new UserResponseDTO();
-        userDto.setId(principal.getId());
-        userDto.setEmail(principal.getEmail());
-        return userDto;
+
+        User user = userRepository.findByEmail(principal.getEmail())
+                .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
+
+        String tenantName = tenantRepository.findById(user.getTenantId())
+                .map(Tenant::getName)
+                .orElse(null);
+
+        return MeResponseDTO.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .tenantId(user.getTenantId())
+                .tenantName(tenantName)
+                .build();
     }
 
     public String refreshAccessToken(String refreshToken){

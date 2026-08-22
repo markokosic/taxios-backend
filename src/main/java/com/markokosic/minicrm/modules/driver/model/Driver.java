@@ -2,6 +2,8 @@ package com.markokosic.minicrm.modules.driver.model;
 
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -52,6 +54,13 @@ public class Driver {
 	)
 	private List<DriverRemunerationConfig> remunerationConfigs = new ArrayList<>();
 
+	private String getConfigKey(DriverRemunerationConfig config) {
+		if (config.getType() == RemunerationModelType.FLAT_RATE) {
+			return config.getType() + "_" + (config.getFlatRateType() != null ? config.getFlatRateType().getFlatRateCode() : "ALL");
+		}
+		return config.getType().name();
+	}
+
 	public void syncRemunerationConfigs(
 			List<CreateRemunerationRequestDTO> requests,
 			Function<CreateRemunerationRequestDTO, DriverRemunerationConfig> mapper
@@ -59,38 +68,37 @@ public class Driver {
 		LocalDate today = LocalDate.now();
 		LocalDate yesterday = today.minusDays(1);
 
-		// get current active configs by type
-		Map<RemunerationModelType, DriverRemunerationConfig> currentActiveMap = this.remunerationConfigs.stream()
+		// get current active configs by composite key
+		Map<String, DriverRemunerationConfig> currentActiveMap = this.remunerationConfigs.stream()
 				.filter(DriverRemunerationConfig::isCurrent)
-				.collect(Collectors.toMap(DriverRemunerationConfig::getType, c -> c));
+				.collect(Collectors.toMap(this::getConfigKey, c -> c));
 
-		Set<RemunerationModelType> typesInRequest = new HashSet<>();
+		Set<String> keysInRequest = new HashSet<>();
 
 		for (CreateRemunerationRequestDTO request : requests) {
-			RemunerationModelType type = request.remunerationModelType();
-			typesInRequest.add(type);
+			DriverRemunerationConfig newConfig = mapper.apply(request);
+			String key = getConfigKey(newConfig);
+			keysInRequest.add(key);
 
-			DriverRemunerationConfig existing = currentActiveMap.get(type);
+			DriverRemunerationConfig existing = currentActiveMap.get(key);
 
 			if (existing != null) {
 				if (!existing.isIdenticalTo(request)) {
 					existing.deactivate(yesterday);
-					DriverRemunerationConfig newConfig = mapper.apply(request);
 					newConfig.activate(today);
 					newConfig.setDriver(this);
 					this.remunerationConfigs.add(newConfig);
 				}
 			} else {
-				DriverRemunerationConfig newConfig = mapper.apply(request);
 				newConfig.activate(today);
 				newConfig.setDriver(this);
 				this.remunerationConfigs.add(newConfig);
 			}
 		}
 
-		//deactivate any types that were not in the request - basically delete a remuneration config.
+		//deactivate any configs that were not in the request - basically delete a remuneration config.
 		currentActiveMap.values().stream()
-				.filter(c -> !typesInRequest.contains(c.getType()))
+				.filter(c -> !keysInRequest.contains(getConfigKey(c)))
 				.forEach(c -> c.deactivate(yesterday));
 	}
 
@@ -112,6 +120,34 @@ public class Driver {
 				.filter(DriverRemunerationConfig::isCurrent)
 				.findFirst()
 				.orElse(null);
+	}
+
+	public List<DriverRemunerationConfig> getActiveRemunerationConfigs() {
+		return this.remunerationConfigs.stream()
+				.filter(DriverRemunerationConfig::isCurrent)
+				.toList();
+	}
+
+	public DriverRemunerationConfig getRemunerationConfigForEntry(ShiftEntryCategory category, FlatRateType flatRateType) {
+		if (category == ShiftEntryCategory.FLAT_RATE && flatRateType != null) {
+			Optional<DriverRemunerationConfig> specificConfig = this.remunerationConfigs.stream()
+					.filter(c -> c.isCurrent() && c.getFlatRateType() != null && flatRateType.getFlatRateCode().equals(c.getFlatRateType().getFlatRateCode()))
+					.findFirst();
+			if (specificConfig.isPresent()) {
+				return specificConfig.get();
+			}
+		}
+
+		RemunerationModelType targetType = switch (category) {
+			case REGULAR -> RemunerationModelType.PERCENTAGE_SHARE;
+			case FLAT_RATE -> RemunerationModelType.FLAT_RATE;
+			case WEEKLY -> RemunerationModelType.WEEKLY_FIXED_RATE;
+		};
+
+		return this.remunerationConfigs.stream()
+				.filter(c -> c.isCurrent() && c.getType() == targetType && c.getFlatRateType() == null)
+				.findFirst()
+				.orElseGet(this::getCurrentRemunerationConfig);
 	}
 
 	public DriverRemunerationConfig getCurrentRemunerationConfigByType(RemunerationModelType type) {

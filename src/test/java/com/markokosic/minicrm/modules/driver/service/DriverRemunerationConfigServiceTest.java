@@ -43,7 +43,8 @@ class DriverRemunerationConfigServiceTest {
 
         CreateRemunerationRequestDTO requestDTO = new CreateFlatRateRemunerationConfigDTO(
                 RemunerationModelType.FLAT_RATE,
-                new BigDecimal("50.00")
+                new BigDecimal("50.00"),
+                null
         );
 
         FlatRateRemunerationConfig configEntity = new FlatRateRemunerationConfig();
