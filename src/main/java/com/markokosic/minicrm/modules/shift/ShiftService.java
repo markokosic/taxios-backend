@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class ShiftService {
 	private final ShiftRepository shiftRepository;
 	private final RemunerationService remunerationService;
 	private final ShiftMapper shiftMapper;
+	private final ShiftRevenueEntryMapper shiftRevenueEntryMapper;
 
 	@Transactional
 	public ShiftResponseDTO createShift(CreateShiftRequestDTO request) {
@@ -39,26 +43,18 @@ public class ShiftService {
 				.orElseThrow(() -> new ResourceNotFoundException("domain.car.not_found"));
 
 		ShiftStatus status = request.status() != null ? request.status() : ShiftStatus.APPROVED;
-
 		Shift shift = shiftMapper.toShiftEntity(request, driver, car, status);
 
 		for (CreateShiftRevenueEntryRequestDTO revenueReq : request.revenues()) {
-			FlatRateType flatRateType = null;
-			if (revenueReq.flatRateTypeId() != null) {
-				flatRateType = flatRateTypeRepository.findById(revenueReq.flatRateTypeId())
-						.orElseThrow(() -> new ResourceNotFoundException("domain.flat_rate_type.not_found"));
-			}
-
-			DriverRemunerationConfig config = driver.getRemunerationConfigForEntry(revenueReq.entryCategory(), flatRateType);
-			if (config == null) {
-				throw new IllegalStateException("No valid remuneration config found for driver " + driver.getId() + " and category " + revenueReq.entryCategory());
-			}
-
-			BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(revenueReq.pricePerTrip(), flatRateType);
-			BigDecimal effectiveRevenue = calculateEffectiveRevenue(revenueReq.revenue(), revenueReq.tripCount(), effectivePricePerTrip);
-			RemunerationSplit split = remunerationService.calculateRemunerationSplit(effectiveRevenue, config);
-
-			ShiftRevenueEntry entry = shiftMapper.toRevenueEntryEntity(revenueReq, shift, config, flatRateType, effectiveRevenue, effectivePricePerTrip, split);
+			ShiftRevenueEntry entry = buildNewRevenueEntry(
+					shift,
+					driver,
+					revenueReq.entryCategory(),
+					revenueReq.flatRateTypeId(),
+					revenueReq.revenue(),
+					revenueReq.tripCount(),
+					revenueReq.pricePerTrip()
+			);
 			shift.addRevenueEntry(entry);
 		}
 
@@ -72,7 +68,7 @@ public class ShiftService {
 				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
 
 		updateShiftMetadata(shift, request);
-		updateRevenueEntries(shift, request.revenues());
+		syncRevenueEntries(shift, request.revenues());
 
 		Shift saved = shiftRepository.save(shift);
 		return shiftMapper.toDto(saved);
@@ -85,23 +81,95 @@ public class ShiftService {
 		shift.setShiftEnd(request.shiftEnd());
 	}
 
-	private void updateRevenueEntries(Shift shift, List<UpdateShiftRevenueEntryRequestDTO> revenueRequests) {
+	private void syncRevenueEntries(Shift shift, List<UpdateShiftRevenueEntryRequestDTO> revenueRequests) {
+		deleteRemovedRevenueEntries(shift, revenueRequests);
+		processRevenueEntries(shift, revenueRequests);
+	}
+
+	private void deleteRemovedRevenueEntries(Shift shift, List<UpdateShiftRevenueEntryRequestDTO> revenueRequests) {
+		Set<Long> requestIds = revenueRequests.stream()
+				.map(UpdateShiftRevenueEntryRequestDTO::id)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+
+		shift.getRevenues().removeIf(entry -> entry.getId() != null && !requestIds.contains(entry.getId()));
+	}
+
+	private void processRevenueEntries(Shift shift, List<UpdateShiftRevenueEntryRequestDTO> revenueRequests) {
 		for (UpdateShiftRevenueEntryRequestDTO revenueReq : revenueRequests) {
-			ShiftRevenueEntry entry = shift.getRevenues().stream()
-					.filter(e -> e.getId().equals(revenueReq.id()))
-					.findFirst()
-					.orElseThrow(() -> new ResourceNotFoundException("domain.shift_revenue_entry.not_found"));
-
-			BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(revenueReq.pricePerTrip(), entry.getFlatRateType());
-			BigDecimal effectiveRevenue = calculateEffectiveRevenue(revenueReq.revenue(), revenueReq.tripCount(), effectivePricePerTrip);
-			RemunerationSplit split = remunerationService.calculateRemunerationSplit(effectiveRevenue, entry.getRemunerationConfig());
-
-			entry.setRevenue(effectiveRevenue);
-			entry.setPricePerTrip(effectivePricePerTrip);
-			entry.setTripCount(revenueReq.tripCount());
-			entry.setCompanyRemuneration(split.companyRemuneration());
-			entry.setDriverRemuneration(split.driverRemuneration());
+			if (revenueReq.id() != null) {
+				updateExistingRevenueEntry(shift, revenueReq);
+			} else {
+				addNewRevenueEntry(shift, revenueReq);
+			}
 		}
+	}
+
+	private void updateExistingRevenueEntry(Shift shift, UpdateShiftRevenueEntryRequestDTO request) {
+		ShiftRevenueEntry entry = shift.getRevenues().stream()
+				.filter(e -> request.id().equals(e.getId()))
+				.findFirst()
+				.orElseThrow(() -> new ResourceNotFoundException("domain.shift_revenue_entry.not_found"));
+
+		BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(request.pricePerTrip(), entry.getFlatRateType());
+		BigDecimal effectiveRevenue = calculateEffectiveRevenue(request.revenue(), request.tripCount(), effectivePricePerTrip);
+		RemunerationSplit split = remunerationService.calculateRemunerationSplit(effectiveRevenue, entry.getRemunerationConfig());
+
+		entry.setRevenue(effectiveRevenue);
+		entry.setPricePerTrip(effectivePricePerTrip);
+		entry.setTripCount(request.tripCount());
+		entry.setCompanyRemuneration(split.companyRemuneration());
+		entry.setDriverRemuneration(split.driverRemuneration());
+	}
+
+	private void addNewRevenueEntry(Shift shift, UpdateShiftRevenueEntryRequestDTO request) {
+		ShiftEntryCategory category = request.entryCategory() != null ? request.entryCategory() : ShiftEntryCategory.REGULAR;
+		ShiftRevenueEntry newEntry = buildNewRevenueEntry(
+				shift,
+				shift.getDriver(),
+				category,
+				request.flatRateTypeId(),
+				request.revenue(),
+				request.tripCount(),
+				request.pricePerTrip()
+		);
+		shift.addRevenueEntry(newEntry);
+	}
+
+	private ShiftRevenueEntry buildNewRevenueEntry(
+			Shift shift,
+			Driver driver,
+			ShiftEntryCategory category,
+			Long flatRateTypeId,
+			BigDecimal requestedRevenue,
+			Long tripCount,
+			BigDecimal requestedPricePerTrip
+	) {
+		FlatRateType flatRateType = null;
+		if (flatRateTypeId != null) {
+			flatRateType = flatRateTypeRepository.findById(flatRateTypeId)
+					.orElseThrow(() -> new ResourceNotFoundException("domain.flat_rate_type.not_found"));
+		}
+
+		DriverRemunerationConfig config = driver.getRemunerationConfigForEntry(category, flatRateType);
+		if (config == null) {
+			throw new IllegalStateException("No valid remuneration config found for driver " + driver.getId() + " and category " + category);
+		}
+
+		BigDecimal effectivePricePerTrip = calculateEffectivePricePerTrip(requestedPricePerTrip, flatRateType);
+		BigDecimal effectiveRevenue = calculateEffectiveRevenue(requestedRevenue, tripCount, effectivePricePerTrip);
+		RemunerationSplit split = remunerationService.calculateRemunerationSplit(effectiveRevenue, config);
+
+		return shiftRevenueEntryMapper.toEntity(
+				shift,
+				config,
+				flatRateType,
+				category,
+				effectiveRevenue,
+				effectivePricePerTrip,
+				tripCount,
+				split
+		);
 	}
 
 	private BigDecimal calculateEffectivePricePerTrip(BigDecimal requestedPricePerTrip, FlatRateType flatRateType) {

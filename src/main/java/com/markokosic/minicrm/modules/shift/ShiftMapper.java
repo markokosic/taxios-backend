@@ -2,14 +2,10 @@ package com.markokosic.minicrm.modules.shift;
 
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
-import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
-import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.math.BigDecimal;
-
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ShiftRevenueEntryMapper.class})
 public interface ShiftMapper {
 
 	@Mapping(target = "id", ignore = true)
@@ -29,36 +25,9 @@ public interface ShiftMapper {
 			ShiftStatus status
 	);
 
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "tenantId", ignore = true)
-	@Mapping(target = "shift", source = "shift")
-	@Mapping(target = "remunerationConfig", source = "config")
-	@Mapping(target = "flatRateType", source = "flatRateType")
-	@Mapping(target = "entryCategory", source = "dto.entryCategory")
-	@Mapping(target = "revenue", source = "effectiveRevenue")
-	@Mapping(target = "companyRemuneration", source = "split.companyRemuneration")
-	@Mapping(target = "driverRemuneration", source = "split.driverRemuneration")
-	@Mapping(target = "tripCount", source = "dto.tripCount")
-	@Mapping(target = "pricePerTrip", source = "effectivePricePerTrip")
-	ShiftRevenueEntry toRevenueEntryEntity(
-			CreateShiftRevenueEntryRequestDTO dto,
-			Shift shift,
-			DriverRemunerationConfig config,
-			FlatRateType flatRateType,
-			BigDecimal effectiveRevenue,
-			BigDecimal effectivePricePerTrip,
-			RemunerationSplit split
-	);
-
 	@Mapping(source = "driver", target = "driver")
 	@Mapping(source = "car", target = "car")
 	@Mapping(expression = "java(entity.getKilometersDriven())", target = "kilometersDriven")
 	@Mapping(source = "revenues", target = "revenues")
 	ShiftResponseDTO toDto(Shift entity);
-
-	@Mapping(source = "flatRateType.id", target = "flatRateTypeId")
-	@Mapping(source = "flatRateType.name", target = "flatRateTypeName")
-	@Mapping(source = "remunerationConfig.type", target = "remunerationModelType")
-	@Mapping(expression = "java(entity.getEntryCategory() == ShiftEntryCategory.FLAT_RATE)", target = "isFlatRate")
-	ShiftRevenueEntryResponseDTO toDto(ShiftRevenueEntry entity);
 }

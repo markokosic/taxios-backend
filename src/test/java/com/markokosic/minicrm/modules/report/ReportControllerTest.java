@@ -44,7 +44,7 @@ class ReportControllerTest {
         when(reportService.generateRevenueReport(eq(dateFrom), eq(dateTo), any(), any())).thenReturn(responseDTO);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched");
 
-        mockMvc.perform(get("/reports/revenue")
+        mockMvc.perform(get("/api/reports/revenue")
                         .param("dateFrom", "2025-01-01")
                         .param("dateTo", "2025-01-31"))
                 .andExpect(status().isOk())
@@ -61,7 +61,7 @@ class ReportControllerTest {
         when(reportService.generateDashboardReport(2025, 5)).thenReturn(dashboardDTO);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched");
 
-        mockMvc.perform(get("/reports/dashboard")
+        mockMvc.perform(get("/api/reports/dashboard")
                         .param("year", "2025")
                         .param("month", "5"))
                 .andExpect(status().isOk())
