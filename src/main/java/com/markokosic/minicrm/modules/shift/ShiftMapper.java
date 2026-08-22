@@ -35,7 +35,6 @@ public interface ShiftMapper {
 	@Mapping(target = "remunerationConfig", source = "config")
 	@Mapping(target = "flatRateType", source = "flatRateType")
 	@Mapping(target = "entryCategory", source = "dto.entryCategory")
-	@Mapping(target = "flatRate", expression = "java(dto.entryCategory() == ShiftEntryCategory.FLAT_RATE)")
 	@Mapping(target = "revenue", source = "effectiveRevenue")
 	@Mapping(target = "companyRemuneration", source = "split.companyRemuneration")
 	@Mapping(target = "driverRemuneration", source = "split.driverRemuneration")
@@ -60,6 +59,6 @@ public interface ShiftMapper {
 	@Mapping(source = "flatRateType.id", target = "flatRateTypeId")
 	@Mapping(source = "flatRateType.name", target = "flatRateTypeName")
 	@Mapping(source = "remunerationConfig.type", target = "remunerationModelType")
-	@Mapping(source = "flatRate", target = "isFlatRate")
+	@Mapping(expression = "java(entity.getEntryCategory() == ShiftEntryCategory.FLAT_RATE)", target = "isFlatRate")
 	ShiftRevenueEntryResponseDTO toDto(ShiftRevenueEntry entity);
 }

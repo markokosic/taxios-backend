@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 07-drop-is-flat-rate-column
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: shift_revenue_entries
+            columnName: is_flat_rate
+      changes:
+        - dropColumn:
+            tableName: shift_revenue_entries
+            columnName: is_flat_rate
+
+  - changeSet:
+      id: 07-migrate-daily-revenue-data-to-shifts
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: daily_revenue
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE shifts ADD COLUMN IF NOT EXISTS legacy_daily_revenue_id BIGINT;
+
+              INSERT INTO shifts (
+                  tenant_id,
+                  driver_id,
+                  car_id,
+                  odometer_start,
+                  odometer_end,
+                  shift_start,
+                  shift_end,
+                  status,
+                  legacy_daily_revenue_id
+              )
+              SELECT
+                  dr.tenant_id,
+                  dr.driver_id,
+                  dr.car_id,
+                  COALESCE(dr.kilometers_from, 0.00),
+                  COALESCE(dr.kilometers_to, COALESCE(dr.kilometers_from, 0.00) + COALESCE(dr.kilometers_driven, 0.00)),
+                  (dr.date + COALESCE(dr.driven_from, TIME '08:00:00')),
+                  CASE
+                      WHEN dr.driven_to < dr.driven_from THEN (dr.date + INTERVAL '1 day' + dr.driven_to)
+                      ELSE (dr.date + COALESCE(dr.driven_to, TIME '16:00:00'))
+                  END,
+                  'APPROVED',
+                  dr.id
+              FROM daily_revenue dr;
+
+              INSERT INTO shift_revenue_entries (
+                  tenant_id,
+                  shift_id,
+                  remuneration_version_id,
+                  flat_rate_type_id,
+                  entry_category,
+                  revenue,
+                  company_remuneration,
+                  driver_remuneration,
+                  trip_count,
+                  price_per_trip
+              )
+              SELECT
+                  dr.tenant_id,
+                  s.id,
+                  dr.remuneration_version_id,
+                  NULL,
+                  CASE
+                      WHEN dc.config_type = 'WEEKLY_FIXED_RATE' THEN 'WEEKLY'
+                      WHEN dc.config_type = 'FLAT_RATE' THEN 'FLAT_RATE'
+                      ELSE 'REGULAR'
+                  END,
+                  dr.revenue,
+                  dr.company_remuneration,
+                  dr.driver_remuneration,
+                  dr.trip_count,
+                  dr.price_per_trip
+              FROM daily_revenue dr
+              JOIN shifts s ON s.legacy_daily_revenue_id = dr.id
+              JOIN driver_remuneration_configs dc ON dr.remuneration_version_id = dc.id;
+
+              ALTER TABLE shifts DROP COLUMN IF EXISTS legacy_daily_revenue_id;

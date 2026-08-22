@@ -171,7 +171,6 @@ databaseChangeLog:
       id: 05-add-shift-foreign-keys-and-indexes
       author: mkosic
       changes:
-        # FKs for flat_rate_types
         - addForeignKeyConstraint:
             baseTableName: flat_rate_types
             baseColumnNames: tenant_id
@@ -179,8 +178,6 @@ databaseChangeLog:
             referencedColumnNames: id
             constraintName: fk_flat_rate_types_tenant
             onDelete: RESTRICT
-
-        # FKs for shifts
         - addForeignKeyConstraint:
             baseTableName: shifts
             baseColumnNames: tenant_id
@@ -202,8 +199,6 @@ databaseChangeLog:
             referencedColumnNames: id
             constraintName: fk_shifts_car
             onDelete: RESTRICT
-
-        # FKs for shift_revenue_entries
         - addForeignKeyConstraint:
             baseTableName: shift_revenue_entries
             baseColumnNames: tenant_id
@@ -232,8 +227,6 @@ databaseChangeLog:
             referencedColumnNames: id
             constraintName: fk_shift_revenue_entries_flat_rate_type
             onDelete: RESTRICT
-
-        # Indexes
         - createIndex:
             tableName: flat_rate_types
             indexName: idx_flat_rate_types_tenant_id
@@ -258,7 +251,6 @@ databaseChangeLog:
             columns:
               - column:
                   name: shift_id
-
   - changeSet:
       id: 05-add-flat-rate-type-to-driver-remuneration-configs
       author: mkosic

@@ -36,9 +36,6 @@ public class ShiftRevenueEntry {
 	@JoinColumn(name = "flat_rate_type_id")
 	private FlatRateType flatRateType;
 
-	@Column(name = "is_flat_rate", nullable = false)
-	private boolean flatRate;
-
 	@Enumerated(EnumType.STRING)
 	@Column(name = "entry_category", nullable = false)
 	private ShiftEntryCategory entryCategory = ShiftEntryCategory.REGULAR;
