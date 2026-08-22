@@ -38,13 +38,13 @@ class ReportControllerTest {
     void getRevenueReport_Success() throws Exception {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 1, 31);
-        RevenueReportSummaryDTO totals = new RevenueReportSummaryDTO(BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.TEN, 1);
+        RevenueReportSummaryDTO totals = new RevenueReportSummaryDTO(BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, 1);
         RevenueReportResponseDTO responseDTO = new RevenueReportResponseDTO(dateFrom, dateTo, GroupBy.NONE, totals, List.of());
 
         when(reportService.generateRevenueReport(eq(dateFrom), eq(dateTo), any(), any())).thenReturn(responseDTO);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched");
 
-        mockMvc.perform(get("/api/reports/revenue")
+        mockMvc.perform(get("/reports/revenue")
                         .param("dateFrom", "2025-01-01")
                         .param("dateTo", "2025-01-31"))
                 .andExpect(status().isOk())
@@ -55,13 +55,13 @@ class ReportControllerTest {
     @WithMockUser
     void getDashboardReport_Success() throws Exception {
         DashboardReportDTO dashboardDTO = new DashboardReportDTO(
-                2025, 5, BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE, 1L
+                2025, 5, BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, 1L
         );
 
         when(reportService.generateDashboardReport(2025, 5)).thenReturn(dashboardDTO);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched");
 
-        mockMvc.perform(get("/api/reports/dashboard")
+        mockMvc.perform(get("/reports/dashboard")
                         .param("year", "2025")
                         .param("month", "5"))
                 .andExpect(status().isOk())
