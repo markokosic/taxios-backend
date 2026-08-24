@@ -1,0 +1,276 @@
+databaseChangeLog:
+  - changeSet:
+      id: 05-create-flat-rate-types-table
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: flat_rate_types
+      changes:
+        - createTable:
+            tableName: flat_rate_types
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_price
+                  type: numeric(19, 2)
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 05-create-shifts-table
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: shifts
+      changes:
+        - createTable:
+            tableName: shifts
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: driver_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: car_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: odometer_start
+                  type: numeric(10, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: odometer_end
+                  type: numeric(10, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shift_start
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shift_end
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(31)
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 05-create-shift-revenue-entries-table
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: shift_revenue_entries
+      changes:
+        - createTable:
+            tableName: shift_revenue_entries
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shift_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: remuneration_version_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: flat_rate_type_id
+                  type: BIGINT
+              - column:
+                  name: entry_category
+                  type: VARCHAR(31)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_flat_rate
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: revenue
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: company_remuneration
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: driver_remuneration
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: trip_count
+                  type: BIGINT
+              - column:
+                  name: price_per_trip
+                  type: numeric(19, 2)
+
+  - changeSet:
+      id: 05-add-shift-foreign-keys-and-indexes
+      author: mkosic
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: flat_rate_types
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_flat_rate_types_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shifts
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_shifts_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shifts
+            baseColumnNames: driver_id
+            referencedTableName: drivers
+            referencedColumnNames: id
+            constraintName: fk_shifts_driver
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shifts
+            baseColumnNames: car_id
+            referencedTableName: cars
+            referencedColumnNames: id
+            constraintName: fk_shifts_car
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shift_revenue_entries
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_shift_revenue_entries_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shift_revenue_entries
+            baseColumnNames: shift_id
+            referencedTableName: shifts
+            referencedColumnNames: id
+            constraintName: fk_shift_revenue_entries_shift
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: shift_revenue_entries
+            baseColumnNames: remuneration_version_id
+            referencedTableName: driver_remuneration_configs
+            referencedColumnNames: id
+            constraintName: fk_shift_revenue_entries_remuneration
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shift_revenue_entries
+            baseColumnNames: flat_rate_type_id
+            referencedTableName: flat_rate_types
+            referencedColumnNames: id
+            constraintName: fk_shift_revenue_entries_flat_rate_type
+            onDelete: RESTRICT
+        - createIndex:
+            tableName: flat_rate_types
+            indexName: idx_flat_rate_types_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: shifts
+            indexName: idx_shifts_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: shifts
+            indexName: idx_shifts_driver_id
+            columns:
+              - column:
+                  name: driver_id
+        - createIndex:
+            tableName: shift_revenue_entries
+            indexName: idx_shift_revenue_entries_shift_id
+            columns:
+              - column:
+                  name: shift_id
+  - changeSet:
+      id: 05-add-flat-rate-type-to-driver-remuneration-configs
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: driver_remuneration_configs
+              columnName: flat_rate_type_id
+      changes:
+        - addColumn:
+            tableName: driver_remuneration_configs
+            columns:
+              - column:
+                  name: flat_rate_type_id
+                  type: BIGINT
+        - addForeignKeyConstraint:
+            baseTableName: driver_remuneration_configs
+            baseColumnNames: flat_rate_type_id
+            referencedTableName: flat_rate_types
+            referencedColumnNames: id
+            constraintName: fk_driver_remuneration_configs_flat_rate_type
+            onDelete: RESTRICT

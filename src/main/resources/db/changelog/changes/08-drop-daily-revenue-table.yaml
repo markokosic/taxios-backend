@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 08-drop-daily-revenue-table
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: daily_revenue
+      changes:
+        - dropTable:
+            tableName: daily_revenue
+            cascadeConstraints: true

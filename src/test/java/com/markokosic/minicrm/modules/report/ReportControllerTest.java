@@ -38,7 +38,7 @@ class ReportControllerTest {
     void getRevenueReport_Success() throws Exception {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 1, 31);
-        RevenueReportSummaryDTO totals = new RevenueReportSummaryDTO(BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.TEN, 1);
+        RevenueReportSummaryDTO totals = new RevenueReportSummaryDTO(BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, 1);
         RevenueReportResponseDTO responseDTO = new RevenueReportResponseDTO(dateFrom, dateTo, GroupBy.NONE, totals, List.of());
 
         when(reportService.generateRevenueReport(eq(dateFrom), eq(dateTo), any(), any())).thenReturn(responseDTO);
@@ -55,7 +55,7 @@ class ReportControllerTest {
     @WithMockUser
     void getDashboardReport_Success() throws Exception {
         DashboardReportDTO dashboardDTO = new DashboardReportDTO(
-                2025, 5, BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE, 1L
+                2025, 5, BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, 1L
         );
 
         when(reportService.generateDashboardReport(2025, 5)).thenReturn(dashboardDTO);

@@ -17,8 +17,10 @@ public record CreateFlatRateRemunerationConfigDTO(
 
 		@JsonFormat(shape = JsonFormat.Shape.NUMBER)
 		@NotNull
-		@PositiveOrZero( message = "{driver.flatRateFee.negative}")
-		BigDecimal flatRateFee
+		@PositiveOrZero(message = "{driver.flatRateFee.negative}")
+		BigDecimal flatRateFee,
+
+		Long flatRateTypeId
 
 ) implements CreateRemunerationRequestDTO {
 }

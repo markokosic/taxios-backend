@@ -1,14 +1,17 @@
 package com.markokosic.minicrm.modules.report;
 
-import com.markokosic.minicrm.modules.revenue.DailyRevenue;
-import com.markokosic.minicrm.modules.revenue.DailyRevenueRepository;
+import com.markokosic.minicrm.modules.driver.model.Driver;
+import com.markokosic.minicrm.modules.shift.Shift;
+import com.markokosic.minicrm.modules.shift.ShiftRevenueEntry;
+import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,40 +26,33 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReportService {
 
-    private final DailyRevenueRepository dailyRevenueRepository;
+    private final ShiftRevenueEntryRepository shiftRevenueEntryRepository;
 
     @Transactional(readOnly = true)
     public DashboardReportDTO generateDashboardReport(int year, Integer month) {
-        LocalDate dateFrom;
-        LocalDate dateTo;
+        LocalDateTime fromDateTime;
+        LocalDateTime toDateTime;
 
         if (month != null) {
-            java.time.YearMonth yearMonth = java.time.YearMonth.of(year, month);
-            dateFrom = yearMonth.atDay(1);
-            dateTo = yearMonth.atEndOfMonth();
+            YearMonth yearMonth = YearMonth.of(year, month);
+            fromDateTime = yearMonth.atDay(1).atStartOfDay();
+            toDateTime = yearMonth.atEndOfMonth().atTime(LocalTime.MAX);
         } else {
-            dateFrom = LocalDate.of(year, 1, 1);
-            dateTo = LocalDate.of(year, 12, 31);
+            fromDateTime = LocalDate.of(year, 1, 1).atStartOfDay();
+            toDateTime = LocalDate.of(year, 12, 31).atTime(LocalTime.MAX);
         }
 
-        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, null);
+        List<ShiftRevenueEntry> entries = shiftRevenueEntryRepository.findRevenuesForReport(fromDateTime, toDateTime, null);
 
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal totalCompany = BigDecimal.ZERO;
         BigDecimal totalDriver = BigDecimal.ZERO;
-        BigDecimal totalKm = BigDecimal.ZERO;
-        long tripCount = rawRevenues.size();
+        long entryCount = entries.size();
 
-        for (DailyRevenue dr : rawRevenues) {
-            totalRevenue = totalRevenue.add(dr.getRevenue());
-            totalCompany = totalCompany.add(dr.getCompanyRemuneration());
-            totalDriver = totalDriver.add(dr.getDriverRemuneration());
-            totalKm = totalKm.add(dr.getKilometersDriven());
-        }
-
-        BigDecimal revenuePerKm = BigDecimal.ZERO;
-        if (totalKm.compareTo(BigDecimal.ZERO) > 0) {
-            revenuePerKm = totalRevenue.divide(totalKm, 2, RoundingMode.HALF_UP);
+        for (ShiftRevenueEntry entry : entries) {
+            totalRevenue = totalRevenue.add(entry.getRevenue());
+            totalCompany = totalCompany.add(entry.getCompanyRemuneration());
+            totalDriver = totalDriver.add(entry.getDriverRemuneration());
         }
 
         return new DashboardReportDTO(
@@ -65,9 +61,7 @@ public class ReportService {
                 totalRevenue,
                 totalCompany,
                 totalDriver,
-                totalKm,
-                revenuePerKm,
-                tripCount
+                entryCount
         );
     }
 
@@ -78,47 +72,63 @@ public class ReportService {
             Long driverId,
             GroupBy groupBy
     ) {
-        List<DailyRevenue> rawRevenues = dailyRevenueRepository.findRawRevenues(dateFrom, dateTo, driverId);
+        GroupBy effectiveGroupBy = groupBy != null ? groupBy : GroupBy.NONE;
+        LocalDateTime fromDateTime = dateFrom.atStartOfDay();
+        LocalDateTime toDateTime = dateTo.atTime(LocalTime.MAX);
+
+        List<ShiftRevenueEntry> entries = shiftRevenueEntryRepository.findRevenuesForReport(fromDateTime, toDateTime, driverId);
 
         List<RevenueReportEntryDTO> rows;
 
-        if (groupBy == GroupBy.NONE) {
-            rows = rawRevenues.stream()
-                    .map(dr -> new RevenueReportEntryDTO(
-                            dr.getDate(),
-                            dr.getRevenue(),
-                            dr.getCompanyRemuneration(),
-                            dr.getDriverRemuneration(),
-                            dr.getKilometersDriven(),
-                            1L,
-                            List.of(new DriverInfoDTO(
-                                    dr.getDriver().getId(),
-                                    dr.getDriver().getFirstName(),
-                                    dr.getDriver().getLastName()
-                            ))
-                    ))
+        if (effectiveGroupBy == GroupBy.NONE) {
+            rows = entries.stream()
+                    .map(entry -> {
+                        Shift shift = entry.getShift();
+                        Driver driver = shift != null ? shift.getDriver() : null;
+                        List<DriverInfoDTO> drivers = driver != null
+                                ? List.of(new DriverInfoDTO(driver.getId(), driver.getFirstName(), driver.getLastName()))
+                                : List.of();
+                        LocalDate rowDate = shift != null && shift.getShiftStart() != null
+                                ? shift.getShiftStart().toLocalDate()
+                                : null;
+
+                        return new RevenueReportEntryDTO(
+                                rowDate,
+                                shift != null ? shift.getId() : null,
+                                entry.getId(),
+                                entry.getEntryCategory(),
+                                entry.getRevenue(),
+                                entry.getCompanyRemuneration(),
+                                entry.getDriverRemuneration(),
+                                1L,
+                                drivers
+                        );
+                    })
                     .collect(Collectors.toList());
         } else {
+            Function<ShiftRevenueEntry, Object> keyExtractor = entry -> {
+                Shift shift = entry.getShift();
+                LocalDate shiftDate = (shift != null && shift.getShiftStart() != null)
+                        ? shift.getShiftStart().toLocalDate()
+                        : LocalDate.MIN;
 
-            Function<DailyRevenue, Object> keyExtractor = dr -> {
-                return switch (groupBy) {
-                    case DAY -> dr.getDate();
-                    case MONTH -> dr.getDate().withDayOfMonth(1);
-                    case YEAR -> dr.getDate().withDayOfYear(1);
-                    case DRIVER -> dr.getDriver().getId();
-                    case CAR -> dr.getCar().getId();
-                    default -> dr.getDate();
+                return switch (effectiveGroupBy) {
+                    case DAY -> shiftDate;
+                    case MONTH -> shiftDate.withDayOfMonth(1);
+                    case YEAR -> shiftDate.withDayOfYear(1);
+                    case DRIVER -> (shift != null && shift.getDriver() != null) ? shift.getDriver().getId() : null;
+                    case CAR -> (shift != null && shift.getCar() != null) ? shift.getCar().getId() : null;
+                    default -> shiftDate;
                 };
             };
 
-
-            Map<Object, List<DailyRevenue>> grouped = rawRevenues.stream()
+            Map<Object, List<ShiftRevenueEntry>> grouped = entries.stream()
                     .collect(Collectors.groupingBy(keyExtractor, LinkedHashMap::new, Collectors.toList()));
 
             rows = grouped.entrySet().stream()
-                    .map(entry -> {
-                        Object key = entry.getKey();
-                        List<DailyRevenue> list = entry.getValue();
+                    .map(groupEntry -> {
+                        Object key = groupEntry.getKey();
+                        List<ShiftRevenueEntry> list = groupEntry.getValue();
 
                         LocalDate rowDate = null;
                         if (key instanceof LocalDate) {
@@ -128,28 +138,31 @@ public class ReportService {
                         BigDecimal totalRevenue = BigDecimal.ZERO;
                         BigDecimal totalCompany = BigDecimal.ZERO;
                         BigDecimal totalDriver = BigDecimal.ZERO;
-                        BigDecimal totalKm = BigDecimal.ZERO;
-
                         Set<DriverInfoDTO> driversSet = new LinkedHashSet<>();
 
-                        for (DailyRevenue dr : list) {
-                            totalRevenue = totalRevenue.add(dr.getRevenue());
-                            totalCompany = totalCompany.add(dr.getCompanyRemuneration());
-                            totalDriver = totalDriver.add(dr.getDriverRemuneration());
-                            totalKm = totalKm.add(dr.getKilometersDriven());
-                            driversSet.add(new DriverInfoDTO(
-                                    dr.getDriver().getId(),
-                                    dr.getDriver().getFirstName(),
-                                    dr.getDriver().getLastName()
-                            ));
+                        for (ShiftRevenueEntry entry : list) {
+                            totalRevenue = totalRevenue.add(entry.getRevenue());
+                            totalCompany = totalCompany.add(entry.getCompanyRemuneration());
+                            totalDriver = totalDriver.add(entry.getDriverRemuneration());
+
+                            if (entry.getShift() != null && entry.getShift().getDriver() != null) {
+                                Driver driver = entry.getShift().getDriver();
+                                driversSet.add(new DriverInfoDTO(
+                                        driver.getId(),
+                                        driver.getFirstName(),
+                                        driver.getLastName()
+                                ));
+                            }
                         }
 
                         return new RevenueReportEntryDTO(
                                 rowDate,
+                                null,
+                                null,
+                                null,
                                 totalRevenue,
                                 totalCompany,
                                 totalDriver,
-                                totalKm,
                                 (long) list.size(),
                                 new ArrayList<>(driversSet)
                         );
@@ -159,25 +172,23 @@ public class ReportService {
 
         RevenueReportSummaryDTO totals = calculateRevenueReportTotals(rows);
 
-        return new RevenueReportResponseDTO(dateFrom, dateTo, groupBy, totals, rows);
+        return new RevenueReportResponseDTO(dateFrom, dateTo, effectiveGroupBy, totals, rows);
     }
 
     private RevenueReportSummaryDTO calculateRevenueReportTotals(List<RevenueReportEntryDTO> rows) {
         return rows.stream()
                 .reduce(
-                        new RevenueReportSummaryDTO(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0),
+                        new RevenueReportSummaryDTO(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0),
                         (summary, row) -> new RevenueReportSummaryDTO(
                                 summary.revenue().add(row.revenue()),
                                 summary.companyShare().add(row.companyRemuneration()),
                                 summary.driverShare().add(row.driverRemuneration()),
-                                summary.totalKm().add(row.kilometersDriven()),
                                 summary.entryCount() + row.entryCount().intValue()
                         ),
                         (s1, s2) -> new RevenueReportSummaryDTO(
                                 s1.revenue().add(s2.revenue()),
                                 s1.companyShare().add(s2.companyShare()),
                                 s1.driverShare().add(s2.driverShare()),
-                                s1.totalKm().add(s2.totalKm()),
                                 s1.entryCount() + s2.entryCount()
                         )
                 );

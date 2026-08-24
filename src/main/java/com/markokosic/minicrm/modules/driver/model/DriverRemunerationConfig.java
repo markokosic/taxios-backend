@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.driver.model;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
+import com.markokosic.minicrm.modules.shift.FlatRateType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,6 +41,10 @@ public abstract class DriverRemunerationConfig {
 	@Column(name = "valid_until")
 	private LocalDate validUntil;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "flat_rate_type_id")
+	private FlatRateType flatRateType;
+
 	public abstract RemunerationModelType getType();
 
 	public abstract boolean isIdenticalTo(CreateRemunerationRequestDTO dto);
@@ -62,6 +67,4 @@ public abstract class DriverRemunerationConfig {
 		this.current = false;
 		this.validUntil = until;
 	}
-
-
 }

@@ -22,22 +22,22 @@ public class RemunerationServiceTest {
     private RemunerationService remunerationService;
 
     @Test
-    void testCalculateRemunerationSplitFromDailyRevenue_shouldDelegateToConfig() {
+    void testCalculateRemunerationSplit_shouldDelegateToConfig() {
         // Arrange
-        BigDecimal dailyRevenue = new BigDecimal("120.00");
+        BigDecimal revenue = new BigDecimal("120.00");
         RemunerationSplit expectedSplit = new RemunerationSplit(
                 new BigDecimal("90.00"), new BigDecimal("30.00")
         );
 
-        when(config.calculateRemuneration(dailyRevenue)).thenReturn(expectedSplit);
+        when(config.calculateRemuneration(revenue)).thenReturn(expectedSplit);
 
         // Act
-        RemunerationSplit result = remunerationService.calculateRemunerationSplitFromDailyRevenue(dailyRevenue, config);
+        RemunerationSplit result = remunerationService.calculateRemunerationSplit(revenue, config);
 
         // Assert
         assertNotNull(result);
         assertEquals(new BigDecimal("90.00"), result.companyRemuneration());
         assertEquals(new BigDecimal("30.00"), result.driverRemuneration());
-        verify(config, times(1)).calculateRemuneration(dailyRevenue);
+        verify(config, times(1)).calculateRemuneration(revenue);
     }
 }

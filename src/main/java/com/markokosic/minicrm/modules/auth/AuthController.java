@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.auth;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.exception.ForbiddenException;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
+import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
@@ -40,8 +41,8 @@ public class AuthController {
     @Operation(summary = "Get current session information", description = "Retrieves information about the currently logged-in user.")
     @ApiResponse(responseCode = "200", description = "User is logged in and session is valid")
     @ApiResponse(responseCode = "401", description = "Unauthorized - No valid session cookie found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> getMe(){
-        UserResponseDTO meResponse = authService.getMe();
+    public ResponseEntity<ApiResponseDTO<MeResponseDTO>> getMe(){
+        MeResponseDTO meResponse = authService.getMe();
         return ResponseEntity.ok(new ApiResponseDTO<>(true, meResponse, "Session is valid" ));
     }
 

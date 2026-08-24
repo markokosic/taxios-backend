@@ -10,5 +10,7 @@ public record FlatRateRemunerationResponseDTO(
 		LocalDate validUntil,
 		boolean current,
 		RemunerationModelType remunerationModelType,
-		BigDecimal flatRateFee
+		BigDecimal flatRateFee,
+		Long flatRateTypeId,
+		String flatRateTypeName
 ) implements RemunerationConfigResponseDTO {}

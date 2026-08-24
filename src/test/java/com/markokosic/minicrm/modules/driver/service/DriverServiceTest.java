@@ -65,7 +65,7 @@ public class DriverServiceTest {
     void testCreateDriver_whenValidRequest_shouldSaveAndReturnDriver() {
         // Arrange
         CreateFlatRateRemunerationConfigDTO configDto = new CreateFlatRateRemunerationConfigDTO(
-                RemunerationModelType.FLAT_RATE, new BigDecimal("30.00")
+                RemunerationModelType.FLAT_RATE, new BigDecimal("30.00"), null
         );
         CreateDriverRequestDTO request = new CreateDriverRequestDTO(
                 "Max", "Mustermann", "max@email.com", "+436601234567", List.of(configDto)
@@ -104,10 +104,10 @@ public class DriverServiceTest {
     void testCreateDriver_whenDuplicateConfigurations_shouldThrowBadRequestException() {
         // Arrange
         CreateFlatRateRemunerationConfigDTO configDto1 = new CreateFlatRateRemunerationConfigDTO(
-                RemunerationModelType.FLAT_RATE, new BigDecimal("30.00")
+                RemunerationModelType.FLAT_RATE, new BigDecimal("30.00"), null
         );
         CreateFlatRateRemunerationConfigDTO configDto2 = new CreateFlatRateRemunerationConfigDTO(
-                RemunerationModelType.FLAT_RATE, new BigDecimal("50.00")
+                RemunerationModelType.FLAT_RATE, new BigDecimal("50.00"), null
         );
         CreateDriverRequestDTO request = new CreateDriverRequestDTO(
                 "Max", "Mustermann", "max@email.com", "+436601234567", List.of(configDto1, configDto2)
