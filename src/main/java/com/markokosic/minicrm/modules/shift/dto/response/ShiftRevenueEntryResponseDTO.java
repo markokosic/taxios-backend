@@ -1,6 +1,7 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.dto.response;
 
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 
 import java.math.BigDecimal;
 

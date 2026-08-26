@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.markokosic.minicrm.modules.car.model.Car;

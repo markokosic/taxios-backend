@@ -2,6 +2,11 @@ package com.markokosic.minicrm.modules.shift;
 
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
+import com.markokosic.minicrm.modules.shift.dto.response.ShiftRevenueEntryResponseDTO;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftRevenueEntry;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.model;
 
 public enum ShiftEntryCategory {
 	REGULAR,

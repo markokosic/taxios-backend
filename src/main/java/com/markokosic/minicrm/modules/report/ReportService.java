@@ -1,9 +1,9 @@
 package com.markokosic.minicrm.modules.report;
 
 import com.markokosic.minicrm.modules.driver.model.Driver;
-import com.markokosic.minicrm.modules.shift.Shift;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntry;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryRepository;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftRevenueEntry;
+import com.markokosic.minicrm.modules.shift.repository.ShiftRevenueEntryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

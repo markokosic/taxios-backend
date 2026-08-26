@@ -3,7 +3,7 @@ package com.markokosic.minicrm.modules.driver.model;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

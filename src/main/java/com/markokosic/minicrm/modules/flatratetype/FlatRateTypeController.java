@@ -1,7 +1,10 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.flatratetype;
 
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
+import com.markokosic.minicrm.modules.flatratetype.dto.request.CreateFlatRateTypeRequestDTO;
+import com.markokosic.minicrm.modules.flatratetype.dto.response.FlatRateTypeResponseDTO;
+import com.markokosic.minicrm.modules.flatratetype.service.FlatRateTypeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

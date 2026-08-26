@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.flatratetype.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;

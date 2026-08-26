@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;

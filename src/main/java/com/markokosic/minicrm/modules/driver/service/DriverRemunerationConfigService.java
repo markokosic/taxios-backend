@@ -7,8 +7,8 @@ import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationReque
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfigRepository;
-import com.markokosic.minicrm.modules.shift.FlatRateType;
-import com.markokosic.minicrm.modules.shift.FlatRateTypeRepository;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

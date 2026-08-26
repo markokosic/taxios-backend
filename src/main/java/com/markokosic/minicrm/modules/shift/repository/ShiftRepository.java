@@ -1,5 +1,6 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.repository;
 
+import com.markokosic.minicrm.modules.shift.model.Shift;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;

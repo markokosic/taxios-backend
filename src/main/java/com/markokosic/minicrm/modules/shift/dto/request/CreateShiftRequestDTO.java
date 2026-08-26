@@ -1,6 +1,6 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.markokosic.minicrm.modules.shift.model.ShiftStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

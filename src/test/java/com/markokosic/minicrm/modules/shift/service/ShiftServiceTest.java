@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.service;
 
 import com.markokosic.minicrm.modules.car.CarRepository;
 import com.markokosic.minicrm.modules.car.model.Car;
@@ -7,6 +7,15 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
+import com.markokosic.minicrm.modules.shift.ShiftMapper;
+import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryMapper;
+import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRequestDTO;
+import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRevenueEntryRequestDTO;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftRevenueEntry;
+import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeRepository;
+import com.markokosic.minicrm.modules.shift.repository.ShiftRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

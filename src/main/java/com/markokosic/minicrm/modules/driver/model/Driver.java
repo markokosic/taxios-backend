@@ -2,8 +2,8 @@ package com.markokosic.minicrm.modules.driver.model;
 
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
-import com.markokosic.minicrm.modules.shift.FlatRateType;
-import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

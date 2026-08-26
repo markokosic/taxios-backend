@@ -1,6 +1,6 @@
 package com.markokosic.minicrm.modules.driver.dto.response;
 
-import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 
 import java.math.BigDecimal;
 

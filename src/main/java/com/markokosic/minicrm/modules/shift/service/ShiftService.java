@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.service;
 
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
@@ -9,11 +9,25 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import org.springframework.transaction.annotation.Transactional;
+import com.markokosic.minicrm.modules.shift.ShiftMapper;
+import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryMapper;
+import com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRequestDTO;
+import com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRevenueEntryRequestDTO;
+import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRequestDTO;
+import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRevenueEntryRequestDTO;
+import com.markokosic.minicrm.modules.shift.dto.response.ShiftResponseDTO;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeRepository;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftRevenueEntry;
+import com.markokosic.minicrm.modules.shift.model.ShiftStatus;
+import com.markokosic.minicrm.modules.shift.repository.ShiftRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

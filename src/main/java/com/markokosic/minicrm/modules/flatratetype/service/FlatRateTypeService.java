@@ -1,6 +1,12 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.flatratetype.service;
 
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
+import com.markokosic.minicrm.modules.flatratetype.FlatRateTypeMapper;
+import com.markokosic.minicrm.modules.flatratetype.dto.request.CreateFlatRateTypeRequestDTO;
+import com.markokosic.minicrm.modules.flatratetype.dto.response.FlatRateTypeResponseDTO;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateTypeStatus;
+import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

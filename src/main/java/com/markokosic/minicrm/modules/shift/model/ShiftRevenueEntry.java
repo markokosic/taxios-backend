@@ -1,6 +1,7 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.model;
 
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

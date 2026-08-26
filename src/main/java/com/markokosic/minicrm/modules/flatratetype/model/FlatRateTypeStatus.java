@@ -1,4 +1,4 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.flatratetype.model;
 
 public enum FlatRateTypeStatus {
     ACTIVE,

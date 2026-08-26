@@ -2,10 +2,10 @@ package com.markokosic.minicrm.modules.report;
 
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
-import com.markokosic.minicrm.modules.shift.Shift;
-import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntry;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryRepository;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftRevenueEntry;
+import com.markokosic.minicrm.modules.shift.repository.ShiftRevenueEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

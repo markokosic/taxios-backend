@@ -2,6 +2,10 @@ package com.markokosic.minicrm.modules.shift;
 
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
+import com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRequestDTO;
+import com.markokosic.minicrm.modules.shift.dto.response.ShiftResponseDTO;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

@@ -1,5 +1,8 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.flatratetype;
 
+import com.markokosic.minicrm.modules.flatratetype.dto.request.CreateFlatRateTypeRequestDTO;
+import com.markokosic.minicrm.modules.flatratetype.dto.response.FlatRateTypeResponseDTO;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

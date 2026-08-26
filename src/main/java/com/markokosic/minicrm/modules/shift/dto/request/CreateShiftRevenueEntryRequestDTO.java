@@ -1,5 +1,6 @@
-package com.markokosic.minicrm.modules.shift;
+package com.markokosic.minicrm.modules.shift.dto.request;
 
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
