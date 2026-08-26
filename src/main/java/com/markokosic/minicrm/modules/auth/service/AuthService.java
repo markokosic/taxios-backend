@@ -74,8 +74,8 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
 
-            String accessToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), tokenProperties.getAccess().getExpirationMinutes());
-            String refreshToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), tokenProperties.getRefresh().getExpirationMinutes());
+            String accessToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+            String refreshToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
             UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), user.isMustChangePassword());
 
             return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
@@ -120,6 +120,9 @@ public class AuthService {
 
         String username = jwtService.extractEmail(refreshToken);
         Long tenantId = jwtService.extractTenantId(refreshToken);
-        return jwtService.generateToken(username, tenantId, tokenProperties.getAccess().getExpirationMinutes());
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
+
+        return jwtService.generateToken(username, tenantId, user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
     }
 }

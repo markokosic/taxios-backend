@@ -100,8 +100,8 @@ public class AuthServiceTest {
 		RegisterTenantResponseDTO response = authService.registerNewTenant(dto);
 
 		assertNotNull(response);
-		assertEquals(100L, response.getId());
-		assertEquals("TEST TENANT", response.getName());
+		assertEquals(100L, response.getTenantId());
+		assertEquals("TEST TENANT", response.getTenantName());
 
 		Mockito.verify(userService, Mockito.times(1)).createTenantOwner(Mockito.eq(dto), Mockito.eq(100L));
 	}
