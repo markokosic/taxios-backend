@@ -2,21 +2,22 @@ package com.markokosic.minicrm.modules.user;
 
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
+import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping(value = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -26,6 +27,16 @@ public class UserController {
 
     private final UserService userService;
     private final I18nService i18n;
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Create user", description = "Creates a new system user for the current tenant. Defaults to mustChangePassword=true.")
+    @ApiResponse(responseCode = "201", description = "User created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Email already exists", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> createUser(@Valid @RequestBody CreateUserRequestDTO request) {
+        UserResponseDTO user = userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, user, i18n.getMessage("success.added")));
+    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID", description = "Retrieves profile details of a specific system user.")

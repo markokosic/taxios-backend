@@ -1,9 +1,16 @@
 package com.markokosic.minicrm.modules.user;
 
+import com.markokosic.minicrm.exception.BadRequestException;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
+import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
+import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +21,47 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public void createTenantOwner(RegisterTenantRequestDTO request, Long tenantId) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResourceConflictException("domain.user.email.duplicate");
+        }
+
+        userRepository.insertUser(
+                request.getEmail(),
+                request.getFirstName(),
+                request.getLastName(),
+                passwordEncoder.encode(request.getPassword()),
+                tenantId,
+                Roles.OWNER.name(),
+                false
+        );
+    }
+
+
+    @Transactional
+    public UserResponseDTO createUser(CreateUserRequestDTO request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new ResourceConflictException("domain.user.email.duplicate");
+        }
+
+        if (request.roles() == Roles.OWNER) {
+            throw new BadRequestException("domain.user.role.owner_not_allowed");
+        }
+
+        User user = new User();
+        user.setEmail(request.email());
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRoles(request.roles() != null ? request.roles() : Roles.ADMIN);
+        user.setMustChangePassword(true);
+
+        User savedUser = userRepository.save(user);
+        return userMapper.userToUserResponseDTO(savedUser);
+    }
 
     public UserResponseDTO getUserById(Long id) {
         User user = userRepository.findById(id)
@@ -27,6 +75,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("domain.user.not_found"));
