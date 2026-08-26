@@ -1,7 +1,8 @@
 package com.markokosic.minicrm.modules.role.dto;
 
 public enum Roles {
-	DRIVER,
+	OWNER,
 	ADMIN,
+	DRIVER,
 	BACKOFFICE
 }
