@@ -1,7 +1,10 @@
 package com.markokosic.minicrm.modules.auth.service;
 
+import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceConflictException;
+import com.markokosic.minicrm.exception.UnauthorizedException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
+import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
@@ -135,5 +138,83 @@ public class AuthServiceTest {
 		assertEquals(100L, result.getTenantId());
 
 		SecurityContextHolder.clearContext();
+	}
+
+	@Test
+	void testChangePassword_Success() {
+		User user = new User();
+		user.setId(1L);
+		user.setEmail("test@test.com");
+		user.setPassword("hashedOldPassword");
+		user.setMustChangePassword(true);
+
+		UserPrincipal principal = new UserPrincipal(user);
+		Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		ChangePasswordRequestDTO request = new ChangePasswordRequestDTO("oldPass123", "newPass456");
+
+		Mockito.when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+		Mockito.when(passwordEncoder.matches("oldPass123", "hashedOldPassword")).thenReturn(true);
+		Mockito.when(passwordEncoder.matches("newPass456", "hashedOldPassword")).thenReturn(false);
+		Mockito.when(passwordEncoder.encode("newPass456")).thenReturn("hashedNewPassword");
+
+		authService.changePassword(request);
+
+		assertEquals("hashedNewPassword", user.getPassword());
+		assertFalse(user.isMustChangePassword());
+		Mockito.verify(userRepository).save(user);
+
+		SecurityContextHolder.clearContext();
+	}
+
+	@Test
+	void testChangePassword_InvalidCurrentPassword() {
+		User user = new User();
+		user.setEmail("test@test.com");
+		user.setPassword("hashedOldPassword");
+
+		UserPrincipal principal = new UserPrincipal(user);
+		Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		ChangePasswordRequestDTO request = new ChangePasswordRequestDTO("wrongPass", "newPass456");
+
+		Mockito.when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+		Mockito.when(passwordEncoder.matches("wrongPass", "hashedOldPassword")).thenReturn(false);
+
+		assertThrows(BadRequestException.class, () -> authService.changePassword(request));
+		Mockito.verify(userRepository, Mockito.never()).save(Mockito.any());
+
+		SecurityContextHolder.clearContext();
+	}
+
+	@Test
+	void testChangePassword_SameAsOldPassword() {
+		User user = new User();
+		user.setEmail("test@test.com");
+		user.setPassword("hashedOldPassword");
+
+		UserPrincipal principal = new UserPrincipal(user);
+		Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		ChangePasswordRequestDTO request = new ChangePasswordRequestDTO("oldPass123", "oldPass123");
+
+		Mockito.when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+		Mockito.when(passwordEncoder.matches("oldPass123", "hashedOldPassword")).thenReturn(true);
+
+		assertThrows(BadRequestException.class, () -> authService.changePassword(request));
+		Mockito.verify(userRepository, Mockito.never()).save(Mockito.any());
+
+		SecurityContextHolder.clearContext();
+	}
+
+	@Test
+	void testChangePassword_Unauthenticated() {
+		SecurityContextHolder.clearContext();
+		ChangePasswordRequestDTO request = new ChangePasswordRequestDTO("oldPass123", "newPass456");
+
+		assertThrows(UnauthorizedException.class, () -> authService.changePassword(request));
 	}
 }

@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.exception.ForbiddenException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
+import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
@@ -137,5 +138,29 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Set-Cookie"))
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser
+    void changePassword_Success() throws Exception {
+        ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("oldPass123", "newPass456");
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser
+    void changePassword_ValidationError() throws Exception {
+        ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("", "short");
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 }

@@ -1,7 +1,9 @@
 package com.markokosic.minicrm.modules.auth;
 
+import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.exception.ForbiddenException;
+import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
@@ -36,6 +38,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final TokenProperties tokenProperties;
+    private final I18nService i18n;
 
     @GetMapping("/me")
     @Operation(summary = "Get current session information", description = "Retrieves information about the currently logged-in user.")
@@ -164,5 +167,14 @@ public class AuthController {
                 .body(new ApiResponseDTO<>(true, null, "Successfully logged out"));
     }
 
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password", description = "Allows an authenticated user to change their password by verifying their current password and providing a new password.")
+    @ApiResponse(responseCode = "200", description = "Password changed successfully")
+    @ApiResponse(responseCode = "400", description = "Current password invalid, new password invalid, or same as current password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized - No valid session found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<ApiResponseDTO<Void>> changePassword(@Valid @RequestBody ChangePasswordRequestDTO request) {
+        authService.changePassword(request);
+        return ResponseEntity.ok(new ApiResponseDTO<>(true, null, i18n.getMessage("auth.password_changed")));
+    }
 
 }

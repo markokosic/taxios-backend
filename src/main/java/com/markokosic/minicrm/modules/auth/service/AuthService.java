@@ -1,8 +1,10 @@
 package com.markokosic.minicrm.modules.auth.service;
 
+import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.UnauthorizedException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
+import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
@@ -23,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +44,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenProperties tokenProperties;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public RegisterTenantResponseDTO registerNewTenant(RegisterTenantRequestDTO userAndTenantDto) {
@@ -124,5 +128,28 @@ public class AuthService {
                 .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
 
         return jwtService.generateToken(username, tenantId, user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+    }
+
+    @Transactional
+    public void changePassword(ChangePasswordRequestDTO request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
+            throw new UnauthorizedException("auth.invalid_credentials");
+        }
+
+        User user = userRepository.findByEmail(principal.getEmail())
+                .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new BadRequestException("auth.password.current_invalid");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new BadRequestException("auth.password.same_as_old");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
     }
 }
