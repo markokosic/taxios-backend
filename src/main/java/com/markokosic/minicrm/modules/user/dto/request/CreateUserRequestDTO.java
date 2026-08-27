@@ -4,6 +4,7 @@ import com.markokosic.minicrm.modules.role.dto.Roles;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "Request payload for creating a new user")
 public record CreateUserRequestDTO(
@@ -20,6 +21,7 @@ public record CreateUserRequestDTO(
         @Schema(description = "User's last name", example = "Mustermann")
         String lastName,
 
-        @Schema(description = "User role", example = "DRIVER")
+        @NotNull
+        @Schema(description = "User role", example = "ADMIN")
         Roles roles
 ) {}

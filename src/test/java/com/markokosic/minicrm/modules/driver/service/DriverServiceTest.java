@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.driver.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.exception.BadRequestException;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
@@ -18,6 +19,12 @@ import com.markokosic.minicrm.modules.driver.model.FlatRateRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfigRepository;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.user.UserRepository;
+import com.markokosic.minicrm.modules.user.UserService;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -59,7 +66,10 @@ public class DriverServiceTest {
     private DriverRemunerationConfigRepository driverRemunerationConfigRepository;
 
     @Mock
-    private com.markokosic.minicrm.modules.user.UserRepository userRepository;
+    private UserRepository userRepository;
+
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private DriverService driverService;
@@ -289,8 +299,72 @@ public class DriverServiceTest {
         driverService.deleteDriver(driverId);
 
         assertEquals(DriverStatus.DELETED, driver.getStatus());
-        assertEquals(com.markokosic.minicrm.modules.user.model.UserStatus.DELETED, user.getStatus());
+        assertEquals(UserStatus.DELETED, user.getStatus());
         assertNull(driver.getUser());
         verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    void testCreateDriverUser_withDriverEmail_Success() {
+        Long driverId = 1L;
+        Driver driver = new Driver();
+        driver.setId(driverId);
+        driver.setFirstName("Max");
+        driver.setLastName("Mustermann");
+        driver.setEmail("driver@taxi.com");
+
+        CreateUserResponseDTO responseDTO = new CreateUserResponseDTO(
+                10L, "Max", "Mustermann", "driver@taxi.com", Roles.DRIVER, true, "tempPass123"
+        );
+
+        when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
+        when(userService.createDriverUser(driver, "driver@taxi.com")).thenReturn(responseDTO);
+
+        CreateUserResponseDTO result = driverService.createDriverUser(driverId, null);
+
+        assertNotNull(result);
+        assertEquals(10L, result.id());
+        verify(userService, times(1)).createDriverUser(driver, "driver@taxi.com");
+    }
+
+    @Test
+    void testCreateDriverUser_withCustomEmail_Success() {
+        Long driverId = 1L;
+        Driver driver = new Driver();
+        driver.setId(driverId);
+        driver.setFirstName("Max");
+        driver.setLastName("Mustermann");
+        driver.setEmail("driver@taxi.com");
+
+        CreateUserResponseDTO responseDTO = new CreateUserResponseDTO(
+                10L, "Max", "Mustermann", "custom@taxi.com", Roles.DRIVER, true, "tempPass123"
+        );
+
+        when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
+        when(userService.createDriverUser(driver, "custom@taxi.com")).thenReturn(responseDTO);
+
+        CreateUserResponseDTO result = driverService.createDriverUser(driverId, "custom@taxi.com");
+
+        assertNotNull(result);
+        assertEquals(10L, result.id());
+        verify(userService, times(1)).createDriverUser(driver, "custom@taxi.com");
+    }
+
+    @Test
+    void testCreateDriverUser_ThrowsConflict_WhenAlreadyHasActiveUser() {
+        Long driverId = 1L;
+        Driver driver = new Driver();
+        driver.setId(driverId);
+
+        User existingUser = new User();
+        existingUser.setId(5L);
+        existingUser.setStatus(UserStatus.ACTIVE);
+        driver.setUser(existingUser);
+
+        when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
+
+        assertThrows(ResourceConflictException.class, () ->
+                driverService.createDriverUser(driverId, null)
+        );
     }
 }

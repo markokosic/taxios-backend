@@ -5,6 +5,7 @@ import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
+import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
@@ -48,27 +49,63 @@ public class UserService {
 
     @Transactional
     public CreateUserResponseDTO createUser(CreateUserRequestDTO request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new ResourceConflictException("domain.user.email.duplicate");
-        }
-
         if (request.roles() == Roles.OWNER || request.roles() == Roles.PRE_AUTH) {
             throw new BadRequestException("domain.user.role.owner_not_allowed");
+        }
+
+        if (request.roles() == Roles.DRIVER) {
+            throw new BadRequestException("domain.user.role.driver_not_allowed");
+        }
+
+        CreatedUserResult result = persistUserWithTemporaryPassword(
+                request.email(),
+                request.firstName(),
+                request.lastName(),
+                request.roles()
+        );
+        return userMapper.toCreateUserResponseDTO(result.user(), result.temporaryPassword());
+    }
+
+    @Transactional
+    public CreateUserResponseDTO createDriverUser(Driver driver, String loginEmail) {
+        CreatedUserResult result = persistUserWithTemporaryPassword(
+                loginEmail,
+                driver.getFirstName(),
+                driver.getLastName(),
+                Roles.DRIVER
+        );
+
+        driver.setUser(result.user());
+        driverRepository.save(driver);
+
+        return userMapper.toCreateUserResponseDTO(result.user(), result.temporaryPassword());
+    }
+
+    private record CreatedUserResult(User user, String temporaryPassword) {}
+
+    private CreatedUserResult persistUserWithTemporaryPassword(
+            String email,
+            String firstName,
+            String lastName,
+            Roles role
+    ) {
+        if (userRepository.existsByEmail(email)) {
+            throw new ResourceConflictException("domain.user.email.duplicate");
         }
 
         String temporaryPassword = TemporaryPasswordGenerator.generate();
 
         User user = new User();
-        user.setEmail(request.email());
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
+        user.setEmail(email);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         user.setPassword(passwordEncoder.encode(temporaryPassword));
-        user.setRoles(request.roles() != null ? request.roles() : Roles.ADMIN);
+        user.setRoles(role);
         user.setMustChangePassword(true);
         user.setStatus(UserStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
-        return userMapper.toCreateUserResponseDTO(savedUser, temporaryPassword);
+        return new CreatedUserResult(savedUser, temporaryPassword);
     }
 
     public UserResponseDTO getUserById(Long id) {

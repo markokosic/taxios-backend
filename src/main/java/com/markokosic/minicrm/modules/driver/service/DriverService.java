@@ -2,12 +2,10 @@ package com.markokosic.minicrm.modules.driver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
-import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
-import com.markokosic.minicrm.modules.driver.dto.request.CreateFlatRateRemunerationConfigDTO;
-import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
-import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.*;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverRevenueOptionDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
@@ -24,6 +22,9 @@ import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.user.UserRepository;
+import com.markokosic.minicrm.modules.user.UserService;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.model.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -44,7 +45,8 @@ public class DriverService {
 	private final DriverLookupService driverLookupService;
 	private final DriverRemunerationConfigRepository driverRemunerationConfigRepository;
 	private final FlatRateTypeRepository flatRateTypeRepository;
-	private final com.markokosic.minicrm.modules.user.UserRepository userRepository;
+	private final UserRepository userRepository;
+	private final UserService userService;
 
 	@Transactional
 	public DriverResponseDTO createDriver(CreateDriverRequestDTO request) {
@@ -201,5 +203,20 @@ public class DriverService {
 		Page<DriverResponseDTO> page = driverRepository.findAllByStatus(DriverStatus.ACTIVE, pageable)
 				.map(driver -> driverMapper.toDto(driver, remunerationConfigMapper));
 		return PageResponseDTO.from(page);
+	}
+
+	@Transactional
+	public CreateUserResponseDTO createDriverUser(Long driverId, String emailOverride) {
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
+
+		if (driver.getUser() != null && driver.getUser().getStatus() == UserStatus.ACTIVE) {
+			throw new ResourceConflictException("domain.driver.already_has_user");
+		}
+
+		String loginEmail = (emailOverride != null && !emailOverride.isBlank())
+				? emailOverride.trim()
+				: driver.getEmail();
+
+		return userService.createDriverUser(driver, loginEmail);
 	}
 }

@@ -4,11 +4,13 @@ import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverUserRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverRevenueOptionDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.service.DriverService;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -125,6 +127,22 @@ public class DriverController {
 		driverService.stopRemunerationConfig(id, configId);
 		return ResponseEntity.noContent().build();
 	}
-}
 
-//@PostMapping(/{id}/remuneration-configs)
+	@PostMapping(value = "/{id}/user", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Create user account for driver", description = "Creates a login user account with ROLE_DRIVER and a temporary password, linked directly to this driver. If no email is supplied in the request body, the driver's contact email is used.")
+	@ApiResponse(responseCode = "201", description = "Driver user account created successfully")
+	@ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "409", description = "Driver already has a user account or email duplicate", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	public ResponseEntity<ApiResponseDTO<CreateUserResponseDTO>> createDriverUser(
+			@PathVariable Long id,
+			@RequestBody(required = false) @Valid CreateDriverUserRequestDTO request
+	) {
+		String loginEmail = (request != null && request.email() != null && !request.email().isBlank())
+				? request.email().trim()
+				: null;
+
+		CreateUserResponseDTO response = driverService.createDriverUser(id, loginEmail);
+		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, response, i18n.getMessage("success.created")));
+	}
+}

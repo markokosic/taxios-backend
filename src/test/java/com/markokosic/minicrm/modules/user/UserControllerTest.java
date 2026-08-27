@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import org.junit.jupiter.api.Test;
@@ -47,9 +48,9 @@ class UserControllerTest {
     @WithMockUser(roles = "ADMIN")
     void createUser_Success() throws Exception {
         CreateUserRequestDTO requestDTO = new CreateUserRequestDTO(
-                "driver@example.com", "Max", "Mustermann", Roles.DRIVER
+                "admin@example.com", "Max", "Mustermann", Roles.ADMIN
         );
-        CreateUserResponseDTO userDTO = new CreateUserResponseDTO(1L, "Max", "Mustermann", "driver@example.com", Roles.DRIVER, true, "tempPass123");
+        CreateUserResponseDTO userDTO = new CreateUserResponseDTO(1L, "Max", "Mustermann", "admin@example.com", Roles.ADMIN, true, "tempPass123");
 
         when(userService.createUser(any(CreateUserRequestDTO.class))).thenReturn(userDTO);
         when(i18n.getMessage("success.added")).thenReturn("Added successfully");
@@ -59,8 +60,8 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.email").value("driver@example.com"))
-                .andExpect(jsonPath("$.data.roles").value("DRIVER"))
+                .andExpect(jsonPath("$.data.email").value("admin@example.com"))
+                .andExpect(jsonPath("$.data.roles").value("ADMIN"))
                 .andExpect(jsonPath("$.data.mustChangePassword").value(true))
                 .andExpect(jsonPath("$.data.temporaryPassword").value("tempPass123"));
     }
@@ -94,7 +95,7 @@ class UserControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void updateUser_Success() throws Exception {
-        com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO requestDTO = new com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO(
+        UpdateUserRequestDTO requestDTO = new UpdateUserRequestDTO(
                 "max@example.com", "Max", "Mustermann", Roles.ADMIN
         );
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");

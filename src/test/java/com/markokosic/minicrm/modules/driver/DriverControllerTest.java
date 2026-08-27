@@ -11,6 +11,8 @@ import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.model.DriverStatus;
 import com.markokosic.minicrm.modules.driver.service.DriverService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
+import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -141,5 +143,41 @@ class DriverControllerTest {
 
         mockMvc.perform(delete("/api/drivers/1/remuneration-configs/10"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createDriverUser_withoutBody_Success() throws Exception {
+        CreateUserResponseDTO responseDTO = new CreateUserResponseDTO(
+                10L, "Max", "Mustermann", "driver@taxi.com", Roles.DRIVER, true, "tempPass123"
+        );
+
+        when(driverService.createDriverUser(1L, null)).thenReturn(responseDTO);
+        when(i18n.getMessage("success.created")).thenReturn("User created");
+
+        mockMvc.perform(post("/api/drivers/1/user"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("driver@taxi.com"))
+                .andExpect(jsonPath("$.data.temporaryPassword").value("tempPass123"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createDriverUser_withCustomEmail_Success() throws Exception {
+        CreateUserResponseDTO responseDTO = new CreateUserResponseDTO(
+                10L, "Max", "Mustermann", "custom.login@taxi.com", Roles.DRIVER, true, "tempPass123"
+        );
+
+        when(driverService.createDriverUser(1L, "custom.login@taxi.com")).thenReturn(responseDTO);
+        when(i18n.getMessage("success.created")).thenReturn("User created");
+
+        mockMvc.perform(post("/api/drivers/1/user")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"custom.login@taxi.com\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("custom.login@taxi.com"))
+                .andExpect(jsonPath("$.data.temporaryPassword").value("tempPass123"));
     }
 }
