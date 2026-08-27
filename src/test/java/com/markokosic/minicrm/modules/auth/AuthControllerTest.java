@@ -55,7 +55,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getMe_Success() throws Exception {
         MeResponseDTO meDTO = MeResponseDTO.builder()
                 .id(1L)
@@ -132,7 +132,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void logout_Success() throws Exception {
         mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isOk())
@@ -141,19 +141,25 @@ class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void changePassword_Success() throws Exception {
         ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("oldPass123", "newPass456");
+        UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@tenant1.com", com.markokosic.minicrm.modules.role.dto.Roles.ADMIN, false);
+        AuthResponseDTO responseDTO = new AuthResponseDTO("new-access-token", "new-refresh-token", userDTO);
+
+        when(authService.changePassword(any())).thenReturn(responseDTO);
 
         mockMvc.perform(post("/api/auth/change-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("max@tenant1.com"));
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void changePassword_ValidationError() throws Exception {
         ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("", "short");
 

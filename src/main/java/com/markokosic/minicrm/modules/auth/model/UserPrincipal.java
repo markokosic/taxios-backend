@@ -1,5 +1,6 @@
 package com.markokosic.minicrm.modules.auth.model;
 
+import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,7 +19,9 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String roleName = "ROLE_" + user.getRoles().name();
+        String roleName = user.isMustChangePassword()
+                ? "ROLE_" + Roles.PRE_AUTH.name()
+                : "ROLE_" + user.getRoles().name();
         return Collections.singleton(new SimpleGrantedAuthority(roleName));
     }
 

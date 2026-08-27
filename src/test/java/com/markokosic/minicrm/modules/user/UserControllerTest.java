@@ -65,7 +65,7 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getUser_Success() throws Exception {
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
         when(userService.getUserById(1L)).thenReturn(userDTO);
@@ -78,7 +78,7 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getAllUsers_Success() throws Exception {
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
         when(userService.getAllUsers()).thenReturn(List.of(userDTO));

@@ -5,6 +5,7 @@ import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.UnauthorizedException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
 import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
+import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
@@ -47,6 +48,7 @@ public class AuthServiceTest {
 	private JWTService jwtService;
 	@Mock
 	private AuthenticationManager authenticationManager;
+	@Mock
 	private TokenProperties tokenProperties;
 
 	@InjectMocks
@@ -146,11 +148,20 @@ public class AuthServiceTest {
 		user.setId(1L);
 		user.setEmail("test@test.com");
 		user.setPassword("hashedOldPassword");
+		user.setTenantId(100L);
+		user.setRoles(Roles.ADMIN);
 		user.setMustChangePassword(true);
 
 		UserPrincipal principal = new UserPrincipal(user);
 		Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		TokenProperties.Token access = new TokenProperties.Token();
+		access.setExpirationMinutes(30L);
+		TokenProperties.Token refresh = new TokenProperties.Token();
+		refresh.setExpirationMinutes(10080L);
+		Mockito.when(tokenProperties.getAccess()).thenReturn(access);
+		Mockito.when(tokenProperties.getRefresh()).thenReturn(refresh);
 
 		ChangePasswordRequestDTO request = new ChangePasswordRequestDTO("oldPass123", "newPass456");
 
@@ -158,9 +169,17 @@ public class AuthServiceTest {
 		Mockito.when(passwordEncoder.matches("oldPass123", "hashedOldPassword")).thenReturn(true);
 		Mockito.when(passwordEncoder.matches("newPass456", "hashedOldPassword")).thenReturn(false);
 		Mockito.when(passwordEncoder.encode("newPass456")).thenReturn("hashedNewPassword");
+		Mockito.when(userRepository.save(Mockito.any(User.class))).thenAnswer(i -> i.getArgument(0));
+		Mockito.when(jwtService.generateToken(Mockito.eq("test@test.com"), Mockito.eq(100L), Mockito.eq(Roles.ADMIN), Mockito.eq(30L)))
+				.thenReturn("full-access-token");
+		Mockito.when(jwtService.generateToken(Mockito.eq("test@test.com"), Mockito.eq(100L), Mockito.eq(Roles.ADMIN), Mockito.eq(10080L)))
+				.thenReturn("full-refresh-token");
 
-		authService.changePassword(request);
+		var response = authService.changePassword(request);
 
+		assertNotNull(response);
+		assertEquals("full-access-token", response.getAccessToken());
+		assertEquals("full-refresh-token", response.getRefreshToken());
 		assertEquals("hashedNewPassword", user.getPassword());
 		assertFalse(user.isMustChangePassword());
 		Mockito.verify(userRepository).save(user);
@@ -216,5 +235,30 @@ public class AuthServiceTest {
 		ChangePasswordRequestDTO request = new ChangePasswordRequestDTO("oldPass123", "newPass456");
 
 		assertThrows(UnauthorizedException.class, () -> authService.changePassword(request));
+	}
+
+	@Test
+	void testLogin_whenMustChangePasswordIsTrue_shouldIssuePreAuthToken() {
+		User user = new User();
+		user.setId(1L);
+		user.setEmail("user@test.com");
+		user.setTenantId(10L);
+		user.setRoles(Roles.DRIVER);
+		user.setMustChangePassword(true);
+
+		LoginRequestDTO loginRequest = new LoginRequestDTO();
+		loginRequest.setEmail("user@test.com");
+		loginRequest.setPassword("tempPass123");
+
+		Mockito.when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+		Mockito.when(jwtService.generateToken("user@test.com", 10L, Roles.PRE_AUTH, 15L))
+				.thenReturn("pre-auth-token");
+
+		var response = authService.login(loginRequest);
+
+		assertNotNull(response);
+		assertEquals("pre-auth-token", response.getAccessToken());
+		assertEquals("", response.getRefreshToken());
+		assertTrue(response.getUser().isMustChangePassword());
 	}
 }

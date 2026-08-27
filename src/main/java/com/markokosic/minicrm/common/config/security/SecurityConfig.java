@@ -1,6 +1,7 @@
 package com.markokosic.minicrm.common.config.security;
 
 import com.markokosic.minicrm.common.config.security.filter.JwtFilter;
+import com.markokosic.minicrm.modules.role.dto.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,7 +48,17 @@ public class SecurityConfig {
                                 "/api/swagger-ui.html",
                                 "/api/v3/api-docs/**"
                         ).permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers(
+                                "/api/auth/change-password",
+                                "/api/auth/me",
+                                "/api/auth/logout"
+                        ).authenticated()
+                        .anyRequest().hasAnyRole(
+                                Roles.OWNER.name(),
+                                Roles.ADMIN.name(),
+                                Roles.DRIVER.name(),
+                                Roles.BACKOFFICE.name()
+                        ))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception

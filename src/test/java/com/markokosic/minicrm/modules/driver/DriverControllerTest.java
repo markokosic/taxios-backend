@@ -48,7 +48,7 @@ class DriverControllerTest {
     private I18nService i18n;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createDriver_Success() throws Exception {
         var remConfig = new CreateFlatRateRemunerationConfigDTO(RemunerationModelType.FLAT_RATE, new BigDecimal("15.00"), null);
         CreateDriverRequestDTO requestDTO = new CreateDriverRequestDTO("John", "Doe", "john@example.com", "+12345678", List.of(remConfig));
@@ -66,7 +66,7 @@ class DriverControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getDriver_Success() throws Exception {
         DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
 
@@ -80,7 +80,7 @@ class DriverControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getAllDriversForSelect_Success() throws Exception {
         DriverSelectDTO selectDTO = new DriverSelectDTO(1L, "John Doe");
         when(driverService.getAllDriversForSelect()).thenReturn(List.of(selectDTO));
@@ -93,7 +93,7 @@ class DriverControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getAllDrivers_Success() throws Exception {
         DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
         PageResponseDTO<DriverResponseDTO> pageResponse = new PageResponseDTO<>(List.of(responseDTO), 1, 10, 1L, 1, true, true);
@@ -108,7 +108,7 @@ class DriverControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void updateDriver_Success() throws Exception {
         UpdateDriverRequestDTO requestDTO = new UpdateDriverRequestDTO("John", "Smith", "john@example.com", "+12345678", List.of());
         DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Smith", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
@@ -125,7 +125,7 @@ class DriverControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteDriver_Success() throws Exception {
         doNothing().when(driverService).deleteDriver(1L);
         when(i18n.getMessage("success.deleted")).thenReturn("Driver deleted");
@@ -135,7 +135,7 @@ class DriverControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void stopRemunerationConfig_Success() throws Exception {
         doNothing().when(driverService).stopRemunerationConfig(1L, 10L);
 

@@ -35,7 +35,7 @@ import org.springframework.http.MediaType;
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Endpoints for user registration, login, logout, and session checks")
 public class AuthController {
-
+    //todo create cookies service
     private final AuthService authService;
     private final TokenProperties tokenProperties;
     private final I18nService i18n;
@@ -75,14 +75,19 @@ public class AuthController {
                 .path("/")
                 .build();
 
-        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
+        ResponseCookie.ResponseCookieBuilder refreshBuilder = ResponseCookie.from("refreshToken", authResponse.getRefreshToken() != null ? authResponse.getRefreshToken() : "")
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Lax")
-                .maxAge(tokenProperties.getRefresh().getExpirationMinutes()*60)
-                .path("/")
-                .build();
+                .path("/");
 
+        if (authResponse.getRefreshToken() == null || authResponse.getRefreshToken().isEmpty()) {
+            refreshBuilder.maxAge(0);
+        } else {
+            refreshBuilder.maxAge(tokenProperties.getRefresh().getExpirationMinutes() * 60);
+        }
+
+        ResponseCookie refreshTokenCookie = refreshBuilder.build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
@@ -172,9 +177,29 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Password changed successfully")
     @ApiResponse(responseCode = "400", description = "Current password invalid, new password invalid, or same as current password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - No valid session found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<ApiResponseDTO<Void>> changePassword(@Valid @RequestBody ChangePasswordRequestDTO request) {
-        authService.changePassword(request);
-        return ResponseEntity.ok(new ApiResponseDTO<>(true, null, i18n.getMessage("auth.password_changed")));
+    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> changePassword(@Valid @RequestBody ChangePasswordRequestDTO request) {
+        AuthResponseDTO authResponse = authService.changePassword(request);
+
+        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", authResponse.getAccessToken())
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .maxAge(tokenProperties.getAccess().getExpirationMinutes() * 60)
+                .path("/")
+                .build();
+
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .maxAge(tokenProperties.getRefresh().getExpirationMinutes() * 60)
+                .path("/")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .body(new ApiResponseDTO<>(true, authResponse.getUser(), i18n.getMessage("auth.password_changed")));
     }
 
 }

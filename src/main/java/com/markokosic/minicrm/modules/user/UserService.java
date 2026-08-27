@@ -48,7 +48,7 @@ public class UserService {
             throw new ResourceConflictException("domain.user.email.duplicate");
         }
 
-        if (request.roles() == Roles.OWNER) {
+        if (request.roles() == Roles.OWNER || request.roles() == Roles.PRE_AUTH) {
             throw new BadRequestException("domain.user.role.owner_not_allowed");
         }
 

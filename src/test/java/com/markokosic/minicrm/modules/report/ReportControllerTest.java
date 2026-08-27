@@ -34,7 +34,7 @@ class ReportControllerTest {
     private I18nService i18n;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getRevenueReport_Success() throws Exception {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 1, 31);
@@ -52,7 +52,7 @@ class ReportControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getDashboardReport_Success() throws Exception {
         DashboardReportDTO dashboardDTO = new DashboardReportDTO(
                 2025, 5, BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, 1L

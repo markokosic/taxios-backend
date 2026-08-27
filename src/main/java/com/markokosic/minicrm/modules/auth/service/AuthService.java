@@ -11,6 +11,7 @@ import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
+import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.tenant.Tenant;
 import com.markokosic.minicrm.modules.tenant.TenantRepository;
 import com.markokosic.minicrm.modules.user.User;
@@ -78,8 +79,13 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
 
-            String accessToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
-            String refreshToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+            Roles tokenRole = user.isMustChangePassword() ? Roles.PRE_AUTH : user.getRoles();
+            Long accessExpiration = user.isMustChangePassword() ? 15L : tokenProperties.getAccess().getExpirationMinutes();
+            String accessToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), tokenRole, accessExpiration);
+            String refreshToken = user.isMustChangePassword()
+                    ? ""
+                    : jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+
             UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), user.isMustChangePassword());
 
             return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
@@ -127,11 +133,15 @@ public class AuthService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
 
+        if (user.isMustChangePassword()) {
+            throw new UnauthorizedException("auth.token.expired");
+        }
+
         return jwtService.generateToken(username, tenantId, user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
     }
 
     @Transactional
-    public void changePassword(ChangePasswordRequestDTO request) {
+    public AuthResponseDTO changePassword(ChangePasswordRequestDTO request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
             throw new UnauthorizedException("auth.invalid_credentials");
@@ -150,6 +160,12 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         user.setMustChangePassword(false);
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        String accessToken = jwtService.generateToken(user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+        String refreshToken = jwtService.generateToken(user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+        UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), false);
+
+        return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
     }
 }
