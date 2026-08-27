@@ -54,6 +54,16 @@ public class GlobalRestExceptionHandler extends ResponseEntityExceptionHandler {
 		return problemDetail;
 	}
 
+	@ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+	public ProblemDetail handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+		ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+				HttpStatus.FORBIDDEN,
+				i18n.getMessage("auth.forbidden")
+		);
+		problemDetail.setTitle("Forbidden");
+		return problemDetail;
+	}
+
 	@ExceptionHandler(ApiException.class)
 	public ProblemDetail handleDomainExceptions(ApiException ex) {
 		HttpStatus status = switch (ex) {

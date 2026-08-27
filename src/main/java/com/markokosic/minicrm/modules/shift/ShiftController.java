@@ -22,6 +22,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,16 +34,28 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Shifts", description = "Endpoints for managing driver shifts")
-@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 public class ShiftController {
 
 	private final ShiftService shiftService;
 	private final I18nService i18n;
 
+	@GetMapping(value = "/my", produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Get my shifts", description = "Fetches a paginated list of shifts for the currently authenticated driver.")
+	@ApiResponse(responseCode = "200", description = "Driver shifts fetched successfully")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<PageResponseDTO<ShiftResponseDTO>>> getMyShifts(
+			@AuthenticationPrincipal UserPrincipal principal,
+			@ParameterObject Pageable pageable
+	) {
+		PageResponseDTO<ShiftResponseDTO> shifts = shiftService.getMyShifts(principal.getId(), pageable);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, shifts, i18n.getMessage("success.fetched")));
+	}
+
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Create a new shift", description = "Logs a new shift with revenue entries.")
 	@ApiResponse(responseCode = "201", description = "Shift created successfully")
 	@ApiResponse(responseCode = "400", description = "Invalid shift data", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> createShift(@Valid @RequestBody CreateShiftRequestDTO request) {
 		ShiftResponseDTO created = shiftService.createShift(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, created, i18n.getMessage("success.added")));
@@ -49,6 +63,7 @@ public class ShiftController {
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get all shifts", description = "Fetches a paginated list of shifts filtered by driver or date range.")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<PageResponseDTO<ShiftResponseDTO>>> getAllShifts(
 			@RequestParam(required = false) Long driverId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
@@ -61,6 +76,7 @@ public class ShiftController {
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Get shift by ID")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> getShiftById(@PathVariable Long id) {
 		ShiftResponseDTO shift = shiftService.getShiftById(id);
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, shift, i18n.getMessage("success.fetched")));
@@ -71,6 +87,7 @@ public class ShiftController {
 	@ApiResponse(responseCode = "200", description = "Shift updated successfully")
 	@ApiResponse(responseCode = "400", description = "Invalid shift data", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "404", description = "Shift not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> updateShift(@PathVariable Long id, @Valid @RequestBody UpdateShiftRequestDTO request) {
 		ShiftResponseDTO updated = shiftService.updateShift(id, request);
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, updated, i18n.getMessage("success.updated")));
@@ -78,6 +95,7 @@ public class ShiftController {
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Delete a shift")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<Void>> deleteShift(@PathVariable Long id) {
 		shiftService.deleteShift(id);
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
