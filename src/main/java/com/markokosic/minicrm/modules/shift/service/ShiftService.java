@@ -221,4 +221,11 @@ public class ShiftService {
 				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
 		shiftRepository.delete(shift);
 	}
+
+	@Transactional(readOnly = true)
+	public PageResponseDTO<ShiftResponseDTO> getMyShifts(String email, Pageable pageable) {
+		Driver driver = driverRepository.findByEmail(email)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
+		return getAllShifts(driver.getId(), null, null, pageable);
+	}
 }

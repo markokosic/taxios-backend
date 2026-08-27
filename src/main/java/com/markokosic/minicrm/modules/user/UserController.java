@@ -25,6 +25,7 @@ import java.util.List;
 @RequestMapping(value = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "Endpoints for managing system users/administrators")
+@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 public class UserController {
 
     private final UserService userService;
@@ -36,7 +37,6 @@ public class UserController {
     @ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "409", description = "Email already exists", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN or OWNER role", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<ApiResponseDTO<CreateUserResponseDTO>> createUser(@Valid @RequestBody CreateUserRequestDTO request) {
         CreateUserResponseDTO user = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, user, i18n.getMessage("success.added")));
@@ -67,7 +67,6 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN or OWNER role", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
