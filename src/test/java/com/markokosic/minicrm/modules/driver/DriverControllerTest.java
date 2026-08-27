@@ -27,8 +27,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -179,5 +178,16 @@ class DriverControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value("custom.login@taxi.com"))
                 .andExpect(jsonPath("$.data.temporaryPassword").value("tempPass123"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deactivateDriverUser_Success() throws Exception {
+        doNothing().when(driverService).deactivateDriverUser(1L);
+
+        mockMvc.perform(delete("/api/drivers/1/user"))
+                .andExpect(status().isNoContent());
+
+        verify(driverService, times(1)).deactivateDriverUser(1L);
     }
 }

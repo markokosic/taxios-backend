@@ -145,4 +145,13 @@ public class DriverController {
 		CreateUserResponseDTO response = driverService.createDriverUser(id, loginEmail);
 		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, response, i18n.getMessage("success.created")));
 	}
+
+	@DeleteMapping("/{id}/user")
+	@Operation(summary = "Deactivate driver user account", description = "Deactivates and removes the login user account linked to this driver while keeping the driver profile intact.")
+	@ApiResponse(responseCode = "204", description = "Driver user account deactivated successfully")
+	@ApiResponse(responseCode = "404", description = "Driver not found or has no active user account", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	public ResponseEntity<Void> deactivateDriverUser(@PathVariable Long id) {
+		driverService.deactivateDriverUser(id);
+		return ResponseEntity.noContent().build();
+	}
 }

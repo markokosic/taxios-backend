@@ -367,4 +367,40 @@ public class DriverServiceTest {
                 driverService.createDriverUser(driverId, null)
         );
     }
+
+    @Test
+    void testDeactivateDriverUser_Success() {
+        Long driverId = 1L;
+        Driver driver = new Driver();
+        driver.setId(driverId);
+
+        User user = new User();
+        user.setId(5L);
+        user.setStatus(UserStatus.ACTIVE);
+        driver.setUser(user);
+
+        when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
+
+        driverService.deactivateDriverUser(driverId);
+
+        assertEquals(UserStatus.DELETED, user.getStatus());
+        assertNull(driver.getUser());
+        verify(userRepository, times(1)).save(user);
+        verify(driverRepository, times(1)).save(driver);
+    }
+
+    @Test
+    void testDeactivateDriverUser_ThrowsNotFound_WhenNoUser() {
+        Long driverId = 1L;
+        Driver driver = new Driver();
+        driver.setId(driverId);
+        driver.setUser(null);
+
+        when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
+
+        assertThrows(ResourceNotFoundException.class, () ->
+                driverService.deactivateDriverUser(driverId)
+        );
+        verify(userRepository, never()).save(any());
+    }
 }

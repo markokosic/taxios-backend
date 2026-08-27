@@ -219,4 +219,20 @@ public class DriverService {
 
 		return userService.createDriverUser(driver, loginEmail);
 	}
+
+	@Transactional
+	public void deactivateDriverUser(Long driverId) {
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
+
+		if (driver.getUser() == null || driver.getUser().getStatus() == UserStatus.DELETED) {
+			throw new ResourceNotFoundException("domain.driver.no_active_user");
+		}
+
+		User user = driver.getUser();
+		user.setStatus(UserStatus.DELETED);
+		userRepository.save(user);
+
+		driver.setUser(null);
+		driverRepository.save(driver);
+	}
 }

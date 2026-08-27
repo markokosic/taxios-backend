@@ -85,16 +85,9 @@ class UserControllerTest {
     @WithMockUser(roles = "ADMIN")
     void getAllUsers_Success() throws Exception {
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
-        PageResponseDTO<UserResponseDTO> pageResponse = PageResponseDTO.<UserResponseDTO>builder()
-                .content(List.of(userDTO))
-                .page(0)
-                .size(20)
-                .totalElements(1L)
-                .totalPages(1)
-                .last(true)
-                .first(true)
-                .empty(false)
-                .build();
+        PageResponseDTO<UserResponseDTO> pageResponse = new PageResponseDTO<>(
+                List.of(userDTO), 1, 20, 1L, 1, true, true
+        );
         when(userService.getAllUsers(any())).thenReturn(pageResponse);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched successfully");
 
