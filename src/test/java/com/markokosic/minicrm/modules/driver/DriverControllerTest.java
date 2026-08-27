@@ -53,7 +53,7 @@ class DriverControllerTest {
     void createDriver_Success() throws Exception {
         var remConfig = new CreateFlatRateRemunerationConfigDTO(RemunerationModelType.FLAT_RATE, new BigDecimal("15.00"), null);
         CreateDriverRequestDTO requestDTO = new CreateDriverRequestDTO("John", "Doe", "john@example.com", "+12345678", List.of(remConfig));
-        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
+        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, null, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
 
         when(driverService.createDriver(any())).thenReturn(responseDTO);
         when(i18n.getMessage("success.created")).thenReturn("Driver created");
@@ -69,7 +69,7 @@ class DriverControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getDriver_Success() throws Exception {
-        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
+        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, 10L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
 
         when(driverService.getDriverById(1L)).thenReturn(responseDTO);
         when(i18n.getMessage("success.fetched")).thenReturn("Driver fetched");
@@ -77,7 +77,8 @@ class DriverControllerTest {
         mockMvc.perform(get("/api/drivers/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(1));
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.userId").value(10));
     }
 
     @Test
@@ -96,7 +97,7 @@ class DriverControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllDrivers_Success() throws Exception {
-        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
+        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, null, "John", "Doe", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
         PageResponseDTO<DriverResponseDTO> pageResponse = new PageResponseDTO<>(List.of(responseDTO), 1, 10, 1L, 1, true, true);
 
         when(driverService.getAllDrivers(any())).thenReturn(pageResponse);
@@ -112,7 +113,7 @@ class DriverControllerTest {
     @WithMockUser(roles = "ADMIN")
     void updateDriver_Success() throws Exception {
         UpdateDriverRequestDTO requestDTO = new UpdateDriverRequestDTO("John", "Smith", "john@example.com", "+12345678", List.of());
-        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, "John", "Smith", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
+        DriverResponseDTO responseDTO = new DriverResponseDTO(1L, null, "John", "Smith", "john@example.com", "+12345678", DriverStatus.ACTIVE, null, null, null);
 
         when(driverService.updateDriver(eq(1L), any())).thenReturn(responseDTO);
         when(i18n.getMessage("success.updated")).thenReturn("Driver updated");

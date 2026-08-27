@@ -12,6 +12,9 @@ public record DriverResponseDTO(
 		@Schema(description = "Unique identifier of the driver", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
 		Long id,
 
+		@Schema(description = "ID of the linked user account (if any)", example = "10")
+		Long userId,
+
 		@Schema(description = "First name of the driver", example = "Max", requiredMode = Schema.RequiredMode.REQUIRED)
 		String firstName,
 

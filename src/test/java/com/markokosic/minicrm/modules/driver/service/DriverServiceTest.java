@@ -92,7 +92,7 @@ public class DriverServiceTest {
         config.setFlatRateFee(new BigDecimal("30.00"));
 
         DriverResponseDTO expectedResponse = new DriverResponseDTO(
-                1L, "Max", "Mustermann", "max@email.com", "+436601234567",
+                1L, null, "Max", "Mustermann", "max@email.com", "+436601234567",
                 DriverStatus.ACTIVE, Collections.emptyList(), LocalDateTime.now(), LocalDateTime.now()
         );
 
@@ -150,7 +150,7 @@ public class DriverServiceTest {
         driver.setId(driverId);
 
         DriverResponseDTO expectedResponse = new DriverResponseDTO(
-                driverId, "Max", "Mustermann", "max@email.com", "+436601234567",
+                driverId, null, "Max", "Mustermann", "max@email.com", "+436601234567",
                 DriverStatus.ACTIVE, Collections.emptyList(), LocalDateTime.now(), LocalDateTime.now()
         );
 
@@ -176,7 +176,7 @@ public class DriverServiceTest {
         Page<Driver> page = new PageImpl<>(List.of(driver));
 
         DriverResponseDTO responseDto = new DriverResponseDTO(
-                1L, "Max", "Mustermann", "max@email.com", "+436601234567",
+                1L, null, "Max", "Mustermann", "max@email.com", "+436601234567",
                 DriverStatus.ACTIVE, Collections.emptyList(), LocalDateTime.now(), LocalDateTime.now()
         );
 
@@ -265,7 +265,7 @@ public class DriverServiceTest {
         driver.setFirstName("Max");
 
         DriverResponseDTO expectedResponse = new DriverResponseDTO(
-                driverId, "Moritz", "Mustermann", "max@email.com", "+436601234567",
+                driverId, null, "Moritz", "Mustermann", "max@email.com", "+436601234567",
                 DriverStatus.ACTIVE, Collections.emptyList(), LocalDateTime.now(), LocalDateTime.now()
         );
 
