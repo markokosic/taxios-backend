@@ -5,10 +5,13 @@ import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
+import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final DriverRepository driverRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -61,6 +65,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setRoles(request.roles() != null ? request.roles() : Roles.ADMIN);
         user.setMustChangePassword(true);
+        user.setStatus(UserStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
         return userMapper.toCreateUserResponseDTO(savedUser, temporaryPassword);
@@ -69,20 +74,65 @@ public class UserService {
     public UserResponseDTO getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("domain.user.not_found"));
+        if (UserStatus.DELETED.equals(user.getStatus())) {
+            throw new ResourceNotFoundException("domain.user.not_found");
+        }
         return convertToUserResponseDto(user);
     }
 
     public List<UserResponseDTO> getAllUsers() {
-        return userRepository.findAll().stream()
+        return userRepository.findAllByStatus(UserStatus.ACTIVE).stream()
                 .map(this::convertToUserResponseDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UserResponseDTO updateUser(Long id, UpdateUserRequestDTO request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("domain.user.not_found"));
+
+        if (UserStatus.DELETED.equals(user.getStatus())) {
+            throw new ResourceNotFoundException("domain.user.not_found");
+        }
+
+        if (request.roles() == Roles.OWNER || request.roles() == Roles.PRE_AUTH) {
+            throw new BadRequestException("domain.user.role.owner_not_allowed");
+        }
+
+        if (!user.getEmail().equalsIgnoreCase(request.email()) && userRepository.existsByEmail(request.email())) {
+            throw new ResourceConflictException("domain.user.email.duplicate");
+        }
+
+        user.setEmail(request.email());
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setRoles(request.roles());
+
+        User savedUser = userRepository.save(user);
+        return convertToUserResponseDto(savedUser);
     }
 
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("domain.user.not_found"));
-        userRepository.delete(user);
+
+        if (UserStatus.DELETED.equals(user.getStatus())) {
+            throw new ResourceNotFoundException("domain.user.not_found");
+        }
+
+        if (Roles.OWNER.equals(user.getRoles())) {
+            throw new BadRequestException("domain.user.cannot_delete_owner");
+        }
+
+        user.setStatus(UserStatus.DELETED);
+
+        driverRepository.findByUserId(user.getId()).ifPresent(driver -> {
+            driver.setUser(null);
+            driverRepository.save(driver);
+        });
+
+        userRepository.save(user);
     }
 
     public UserResponseDTO convertToUserResponseDto(User user) {

@@ -23,6 +23,8 @@ import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeReposi
 import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +44,7 @@ public class DriverService {
 	private final DriverLookupService driverLookupService;
 	private final DriverRemunerationConfigRepository driverRemunerationConfigRepository;
 	private final FlatRateTypeRepository flatRateTypeRepository;
+	private final com.markokosic.minicrm.modules.user.UserRepository userRepository;
 
 	@Transactional
 	public DriverResponseDTO createDriver(CreateDriverRequestDTO request) {
@@ -158,8 +161,14 @@ public class DriverService {
 
 	@Transactional
 	public void deleteDriver(Long id) {
-		Driver customer = validateDriverDeletion(id);
-		customer.setStatus(DriverStatus.DELETED);
+		Driver driver = validateDriverDeletion(id);
+		driver.setStatus(DriverStatus.DELETED);
+		if (driver.getUser() != null) {
+			User user = driver.getUser();
+			user.setStatus(UserStatus.DELETED);
+			userRepository.save(user);
+			driver.setUser(null);
+		}
 	}
 
 	@Transactional

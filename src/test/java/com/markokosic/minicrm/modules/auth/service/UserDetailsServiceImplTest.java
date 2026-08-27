@@ -67,4 +67,15 @@ class UserDetailsServiceImplTest {
                 userDetailsService.loadUserByUsername("notfound@example.com")
         );
     }
+
+    @Test
+    void loadUserByUsername_UserDeleted_PrincipalIsDisabled() {
+        user.setStatus(com.markokosic.minicrm.modules.user.model.UserStatus.DELETED);
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername("admin@example.com");
+
+        assertNotNull(userDetails);
+        assertFalse(userDetails.isEnabled());
+    }
 }

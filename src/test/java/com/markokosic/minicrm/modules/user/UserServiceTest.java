@@ -5,9 +5,12 @@ import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +32,9 @@ public class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private DriverRepository driverRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -173,7 +179,7 @@ public class UserServiceTest {
         UserResponseDTO response1 = new UserResponseDTO(1L, "Max", "Mustermann", "max@email.com");
         UserResponseDTO response2 = new UserResponseDTO(2L, "Erika", "Musterfrau", "erika@email.com");
 
-        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+        when(userRepository.findAllByStatus(UserStatus.ACTIVE)).thenReturn(List.of(user1, user2));
         when(userMapper.userToUserResponseDTO(user1)).thenReturn(response1);
         when(userMapper.userToUserResponseDTO(user2)).thenReturn(response2);
 
@@ -185,24 +191,102 @@ public class UserServiceTest {
         assertEquals(2, result.size());
         assertEquals("max@email.com", result.get(0).getEmail());
         assertEquals("erika@email.com", result.get(1).getEmail());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAllByStatus(UserStatus.ACTIVE);
     }
 
     @Test
-    void testDeleteUser_whenUserExists_shouldDeleteUser() {
+    void testUpdateUser_Success() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        user.setEmail("old@email.com");
+        user.setRoles(Roles.DRIVER);
+        user.setStatus(UserStatus.ACTIVE);
+
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO("new@email.com", "John", "Doe", Roles.ADMIN);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("new@email.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        UserResponseDTO expected = new UserResponseDTO(userId, "John", "Doe", "new@email.com");
+        when(userMapper.userToUserResponseDTO(user)).thenReturn(expected);
+
+        UserResponseDTO result = userService.updateUser(userId, request);
+
+        assertNotNull(result);
+        assertEquals("new@email.com", user.getEmail());
+        assertEquals(Roles.ADMIN, user.getRoles());
+        verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    void testUpdateUser_ThrowsConflict_WhenEmailAlreadyExists() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        user.setEmail("old@email.com");
+        user.setStatus(UserStatus.ACTIVE);
+
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO("taken@email.com", "John", "Doe", Roles.ADMIN);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("taken@email.com")).thenReturn(true);
+
+        assertThrows(ResourceConflictException.class, () -> userService.updateUser(userId, request));
+    }
+
+    @Test
+    void testUpdateUser_ThrowsBadRequest_WhenOwnerRole() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        user.setEmail("user@email.com");
+        user.setStatus(UserStatus.ACTIVE);
+
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO("user@email.com", "John", "Doe", Roles.OWNER);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThrows(BadRequestException.class, () -> userService.updateUser(userId, request));
+    }
+
+    @Test
+    void testDeleteUser_whenUserExists_shouldSoftDeleteAndUnlinkDriver() {
         // Arrange
         Long userId = 1L;
         User user = new User();
         user.setId(userId);
+        user.setRoles(Roles.DRIVER);
+        user.setStatus(UserStatus.ACTIVE);
+
+        com.markokosic.minicrm.modules.driver.model.Driver driver = new com.markokosic.minicrm.modules.driver.model.Driver();
+        driver.setId(10L);
+        driver.setUser(user);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(driverRepository.findByUserId(userId)).thenReturn(Optional.of(driver));
 
         // Act
         userService.deleteUser(userId);
 
         // Assert
-        verify(userRepository, times(1)).findById(userId);
-        verify(userRepository, times(1)).delete(user);
+        assertEquals(UserStatus.DELETED, user.getStatus());
+        assertNull(driver.getUser());
+        verify(driverRepository, times(1)).save(driver);
+        verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    void testDeleteUser_whenOwner_shouldThrowBadRequest() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        user.setRoles(Roles.OWNER);
+        user.setStatus(UserStatus.ACTIVE);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThrows(BadRequestException.class, () -> userService.deleteUser(userId));
     }
 
     @Test
@@ -217,6 +301,6 @@ public class UserServiceTest {
         );
         assertEquals("domain.user.not_found", exception.getMessage());
         verify(userRepository, times(1)).findById(userId);
-        verify(userRepository, never()).delete(any(User.class));
+        verify(userRepository, never()).save(any(User.class));
     }
 }

@@ -58,6 +58,9 @@ public class DriverServiceTest {
     @Mock
     private DriverRemunerationConfigRepository driverRemunerationConfigRepository;
 
+    @Mock
+    private com.markokosic.minicrm.modules.user.UserRepository userRepository;
+
     @InjectMocks
     private DriverService driverService;
 
@@ -267,5 +270,27 @@ public class DriverServiceTest {
         verify(driverLookupService, times(1)).validateDriverExistsOrThrow(driverId);
         verify(driverMapper, times(1)).updateEntityFromDto(request, driver);
         verify(driverRepository, times(1)).save(driver);
+    }
+
+    @Test
+    void testDeleteDriver_withLinkedUser_shouldSoftDeleteDriverAndUser() {
+        Long driverId = 1L;
+        Driver driver = new Driver();
+        driver.setId(driverId);
+        driver.setStatus(DriverStatus.ACTIVE);
+
+        com.markokosic.minicrm.modules.user.User user = new com.markokosic.minicrm.modules.user.User();
+        user.setId(5L);
+        user.setStatus(com.markokosic.minicrm.modules.user.model.UserStatus.ACTIVE);
+        driver.setUser(user);
+
+        when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
+
+        driverService.deleteDriver(driverId);
+
+        assertEquals(DriverStatus.DELETED, driver.getStatus());
+        assertEquals(com.markokosic.minicrm.modules.user.model.UserStatus.DELETED, user.getStatus());
+        assertNull(driver.getUser());
+        verify(userRepository, times(1)).save(user);
     }
 }

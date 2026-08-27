@@ -1,6 +1,7 @@
 package com.markokosic.minicrm.modules.user;
 
 import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -48,4 +49,8 @@ public class User {
 
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
 }

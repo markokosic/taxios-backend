@@ -61,6 +61,17 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponseDTO<>(true, users, i18n.getMessage("success.fetched")));
     }
 
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Update user", description = "Updates profile details (first name, last name, roles) of a system user.")
+    @ApiResponse(responseCode = "200", description = "User updated successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request payload or role assignment", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN or OWNER role", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO request) {
+        UserResponseDTO user = userService.updateUser(id, request);
+        return ResponseEntity.ok(new ApiResponseDTO<>(true, user, i18n.getMessage("success.updated")));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete user", description = "Deletes a system user by their ID.")
     @ApiResponse(responseCode = "204", description = "User deleted successfully")

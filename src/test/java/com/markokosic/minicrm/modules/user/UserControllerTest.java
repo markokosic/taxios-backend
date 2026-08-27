@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -88,6 +89,25 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data[0].email").value("max@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateUser_Success() throws Exception {
+        com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO requestDTO = new com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO(
+                "max@example.com", "Max", "Mustermann", Roles.ADMIN
+        );
+        UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
+
+        when(userService.updateUser(eq(1L), any())).thenReturn(userDTO);
+        when(i18n.getMessage("success.updated")).thenReturn("Updated successfully");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("max@example.com"));
     }
 
     @Test
