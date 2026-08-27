@@ -65,6 +65,36 @@ public class ShiftController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, created, i18n.getMessage("success.added")));
 	}
 
+	@PutMapping(value = "/my/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Update my pending shift", description = "Allows a driver to update their own shift as long as it is still in PENDING status.")
+	@ApiResponse(responseCode = "200", description = "Shift updated successfully")
+	@ApiResponse(responseCode = "400", description = "Invalid shift data", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "403", description = "Shift cannot be edited because it is already approved/rejected", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "404", description = "Shift not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> updateMyShift(
+			@PathVariable Long id,
+			@AuthenticationPrincipal UserPrincipal principal,
+			@Valid @RequestBody UpdateShiftRequestDTO request
+	) {
+		ShiftResponseDTO updated = shiftService.updateMyShift(principal.getId(), id, request);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, updated, i18n.getMessage("success.updated")));
+	}
+
+	@DeleteMapping("/my/{id}")
+	@Operation(summary = "Delete my pending shift", description = "Allows a driver to delete their own shift as long as it is still in PENDING status.")
+	@ApiResponse(responseCode = "200", description = "Shift deleted successfully")
+	@ApiResponse(responseCode = "403", description = "Shift cannot be deleted because it is already approved/rejected", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "404", description = "Shift not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<Void>> deleteMyShift(
+			@PathVariable Long id,
+			@AuthenticationPrincipal UserPrincipal principal
+	) {
+		shiftService.deleteMyShift(principal.getId(), id);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
+	}
+
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Create a new shift", description = "Logs a new shift with revenue entries.")
 	@ApiResponse(responseCode = "201", description = "Shift created successfully")

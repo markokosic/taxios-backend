@@ -16,7 +16,7 @@ class TemporaryPasswordGeneratorTest {
         assertTrue(password.chars().anyMatch(Character::isUpperCase), "Should contain uppercase character");
         assertTrue(password.chars().anyMatch(Character::isLowerCase), "Should contain lowercase character");
         assertTrue(password.chars().anyMatch(Character::isDigit), "Should contain digit");
-        assertTrue(password.chars().anyMatch(ch -> "!@#$%&*()_-+=".indexOf(ch) >= 0), "Should contain special character");
+        assertTrue(password.chars().anyMatch(ch -> "!@#$%^&*()_-+=".indexOf(ch) >= 0), "Should contain special character");
     }
 
     @Test

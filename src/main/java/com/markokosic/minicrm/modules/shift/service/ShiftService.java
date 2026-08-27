@@ -1,6 +1,7 @@
 package com.markokosic.minicrm.modules.shift.service;
 
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
+import com.markokosic.minicrm.exception.ForbiddenException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.car.CarRepository;
 import com.markokosic.minicrm.modules.car.model.Car;
@@ -263,5 +264,47 @@ public class ShiftService {
 				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
 		shift.setStatus(ShiftStatus.REJECTED);
 		return shiftMapper.toDto(shift);
+	}
+
+	@Transactional
+	public ShiftResponseDTO updateMyShift(Long userId, Long shiftId, UpdateShiftRequestDTO request) {
+		Driver driver = driverRepository.findByUserId(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
+
+		Shift shift = shiftRepository.findById(shiftId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
+
+		if (!shift.getDriver().getId().equals(driver.getId())) {
+			throw new ResourceNotFoundException("domain.shift.not_found");
+		}
+
+		if (shift.getStatus() != ShiftStatus.PENDING) {
+			throw new ForbiddenException("domain.shift.cannot_modify_approved");
+		}
+
+		updateShiftMetadata(shift, request);
+		syncRevenueEntries(shift, request.revenues());
+
+		Shift saved = shiftRepository.save(shift);
+		return shiftMapper.toDto(saved);
+	}
+
+	@Transactional
+	public void deleteMyShift(Long userId, Long shiftId) {
+		Driver driver = driverRepository.findByUserId(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
+
+		Shift shift = shiftRepository.findById(shiftId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
+
+		if (!shift.getDriver().getId().equals(driver.getId())) {
+			throw new ResourceNotFoundException("domain.shift.not_found");
+		}
+
+		if (shift.getStatus() != ShiftStatus.PENDING) {
+			throw new ForbiddenException("domain.shift.cannot_modify_approved");
+		}
+
+		shiftRepository.delete(shift);
 	}
 }

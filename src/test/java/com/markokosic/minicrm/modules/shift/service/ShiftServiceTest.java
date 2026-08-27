@@ -1,5 +1,6 @@
 package com.markokosic.minicrm.modules.shift.service;
 
+import com.markokosic.minicrm.exception.ForbiddenException;
 import com.markokosic.minicrm.modules.car.CarRepository;
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
@@ -186,5 +187,68 @@ class ShiftServiceTest {
         assertNotNull(result);
         verify(driverRepository).findByUserId(5L);
         verify(shiftRepository).save(any());
+    }
+
+    @Test
+    void updateMyShift_Success_WhenPending() {
+        when(driver.getId()).thenReturn(10L);
+        shift.setStatus(ShiftStatus.PENDING);
+
+        when(driverRepository.findByUserId(5L)).thenReturn(Optional.of(driver));
+        when(shiftRepository.findById(50L)).thenReturn(Optional.of(shift));
+        when(shiftRepository.save(any(Shift.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(shiftMapper.toDto(any())).thenReturn(mock(com.markokosic.minicrm.modules.shift.dto.response.ShiftResponseDTO.class));
+
+        UpdateShiftRequestDTO request = new UpdateShiftRequestDTO(
+                new BigDecimal("150.00"), new BigDecimal("300.00"),
+                LocalDateTime.of(2025, 5, 10, 9, 0), LocalDateTime.of(2025, 5, 10, 17, 0),
+                List.of()
+        );
+
+        var result = shiftService.updateMyShift(5L, 50L, request);
+
+        assertNotNull(result);
+        verify(shiftRepository).save(shift);
+    }
+
+    @Test
+    void updateMyShift_ThrowsForbidden_WhenApproved() {
+        when(driver.getId()).thenReturn(10L);
+        shift.setStatus(ShiftStatus.APPROVED);
+
+        when(driverRepository.findByUserId(5L)).thenReturn(Optional.of(driver));
+        when(shiftRepository.findById(50L)).thenReturn(Optional.of(shift));
+
+        UpdateShiftRequestDTO request = new UpdateShiftRequestDTO(
+                new BigDecimal("150.00"), new BigDecimal("300.00"),
+                LocalDateTime.of(2025, 5, 10, 9, 0), LocalDateTime.of(2025, 5, 10, 17, 0),
+                List.of()
+        );
+
+        assertThrows(ForbiddenException.class, () -> shiftService.updateMyShift(5L, 50L, request));
+    }
+
+    @Test
+    void deleteMyShift_Success_WhenPending() {
+        when(driver.getId()).thenReturn(10L);
+        shift.setStatus(ShiftStatus.PENDING);
+
+        when(driverRepository.findByUserId(5L)).thenReturn(Optional.of(driver));
+        when(shiftRepository.findById(50L)).thenReturn(Optional.of(shift));
+
+        shiftService.deleteMyShift(5L, 50L);
+
+        verify(shiftRepository).delete(shift);
+    }
+
+    @Test
+    void deleteMyShift_ThrowsForbidden_WhenApproved() {
+        when(driver.getId()).thenReturn(10L);
+        shift.setStatus(ShiftStatus.APPROVED);
+
+        when(driverRepository.findByUserId(5L)).thenReturn(Optional.of(driver));
+        when(shiftRepository.findById(50L)).thenReturn(Optional.of(shift));
+
+        assertThrows(ForbiddenException.class, () -> shiftService.deleteMyShift(5L, 50L));
     }
 }

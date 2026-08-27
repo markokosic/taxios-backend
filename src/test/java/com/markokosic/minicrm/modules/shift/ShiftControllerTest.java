@@ -160,4 +160,53 @@ class ShiftControllerTest {
         mockMvc.perform(post("/api/shifts/1/approve"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void updateMyShift_Success_WhenDriverRole() throws Exception {
+        com.markokosic.minicrm.modules.user.User driverUser = new com.markokosic.minicrm.modules.user.User();
+        driverUser.setId(5L);
+        driverUser.setEmail("driver@taxi.com");
+        driverUser.setRoles(com.markokosic.minicrm.modules.role.dto.Roles.DRIVER);
+        com.markokosic.minicrm.modules.auth.model.UserPrincipal principal = new com.markokosic.minicrm.modules.auth.model.UserPrincipal(driverUser);
+
+        var updateReq = new com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRevenueEntryRequestDTO(
+                101L, com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory.REGULAR, null, new BigDecimal("150.00"), null, null
+        );
+        var requestDTO = new com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRequestDTO(
+                new BigDecimal("100.00"), new BigDecimal("250.00"),
+                LocalDateTime.now(), LocalDateTime.now().plusHours(8), List.of(updateReq)
+        );
+
+        ShiftResponseDTO responseDTO = new ShiftResponseDTO(
+                1L, null, null, new BigDecimal("100.00"), new BigDecimal("250.00"),
+                new BigDecimal("150.00"), LocalDateTime.now(), LocalDateTime.now().plusHours(8),
+                ShiftStatus.PENDING, List.of()
+        );
+
+        when(shiftService.updateMyShift(eq(5L), eq(1L), any())).thenReturn(responseDTO);
+        when(i18n.getMessage("success.updated")).thenReturn("Shift updated");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/shifts/my/1")
+                        .with(user(principal))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void deleteMyShift_Success_WhenDriverRole() throws Exception {
+        com.markokosic.minicrm.modules.user.User driverUser = new com.markokosic.minicrm.modules.user.User();
+        driverUser.setId(5L);
+        driverUser.setEmail("driver@taxi.com");
+        driverUser.setRoles(com.markokosic.minicrm.modules.role.dto.Roles.DRIVER);
+        com.markokosic.minicrm.modules.auth.model.UserPrincipal principal = new com.markokosic.minicrm.modules.auth.model.UserPrincipal(driverUser);
+
+        when(i18n.getMessage("success.deleted")).thenReturn("Shift deleted");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/shifts/my/1")
+                        .with(user(principal)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }
