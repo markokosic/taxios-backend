@@ -39,12 +39,14 @@ class JWTServiceTest {
 
     @Test
     void generateToken_AndExtractClaims_Success() {
+        Long userId = 42L;
         String email = "test@example.com";
         Long tenantId = 5L;
         Roles role = Roles.OWNER;
-        String token = jwtService.generateToken(email, tenantId, role, 10L);
+        String token = jwtService.generateToken(userId, email, tenantId, role, 10L);
 
         assertNotNull(token);
+        assertEquals(userId, jwtService.extractUserId(token));
         assertEquals(email, jwtService.extractEmail(token));
         assertEquals(tenantId, jwtService.extractTenantId(token));
         assertEquals("OWNER", jwtService.extractRole(token));
@@ -55,7 +57,7 @@ class JWTServiceTest {
     @Test
     void validateToken_Valid_ReturnsTrue() {
         String email = "test@example.com";
-        String token = jwtService.generateToken(email, 1L, Roles.ADMIN, 10L);
+        String token = jwtService.generateToken(1L, email, 1L, Roles.ADMIN, 10L);
 
         when(userDetails.getUsername()).thenReturn(email);
 
@@ -64,7 +66,7 @@ class JWTServiceTest {
 
     @Test
     void validateToken_InvalidUser_ReturnsFalse() {
-        String token = jwtService.generateToken("test@example.com", 1L, Roles.DRIVER, 10L);
+        String token = jwtService.generateToken(1L, "test@example.com", 1L, Roles.DRIVER, 10L);
 
         when(userDetails.getUsername()).thenReturn("other@example.com");
 
@@ -74,7 +76,7 @@ class JWTServiceTest {
     @Test
     void validateRefreshToken_UserExists_ReturnsTrue() {
         String email = "test@example.com";
-        String token = jwtService.generateToken(email, 1L, Roles.OWNER, 10L);
+        String token = jwtService.generateToken(1L, email, 1L, Roles.OWNER, 10L);
 
         User user = new User();
         user.setEmail(email);
@@ -87,7 +89,7 @@ class JWTServiceTest {
     @Test
     void validateRefreshToken_UserNotFound_ReturnsFalse() {
         String email = "test@example.com";
-        String token = jwtService.generateToken(email, 1L, Roles.OWNER, 10L);
+        String token = jwtService.generateToken(1L, email, 1L, Roles.OWNER, 10L);
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 

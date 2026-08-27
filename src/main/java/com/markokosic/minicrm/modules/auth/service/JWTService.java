@@ -28,9 +28,10 @@ public class JWTService {
         this.userRepository = userRepository;
     }
 
-    public String generateToken(String email, Long tenantId, Roles role, Long expirationInMinutes) {
+    public String generateToken(Long userId, String email, Long tenantId, Roles role, Long expirationInMinutes) {
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
         claims.put("tenantId", tenantId);
         claims.put("role", role.name());
 
@@ -52,6 +53,10 @@ public class JWTService {
 
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
     public Long extractTenantId(String token) {

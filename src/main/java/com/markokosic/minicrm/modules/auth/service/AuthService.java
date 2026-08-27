@@ -81,10 +81,10 @@ public class AuthService {
 
             Roles tokenRole = user.isMustChangePassword() ? Roles.PRE_AUTH : user.getRoles();
             Long accessExpiration = user.isMustChangePassword() ? 15L : tokenProperties.getAccess().getExpirationMinutes();
-            String accessToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), tokenRole, accessExpiration);
+            String accessToken = jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), tokenRole, accessExpiration);
             String refreshToken = user.isMustChangePassword()
                     ? ""
-                    : jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+                    : jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
 
             UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), user.isMustChangePassword());
 
@@ -137,7 +137,7 @@ public class AuthService {
             throw new UnauthorizedException("auth.token.expired");
         }
 
-        return jwtService.generateToken(username, tenantId, user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+        return jwtService.generateToken(user.getId(), username, tenantId, user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
     }
 
     @Transactional
@@ -162,8 +162,8 @@ public class AuthService {
         user.setMustChangePassword(false);
         user = userRepository.save(user);
 
-        String accessToken = jwtService.generateToken(user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
-        String refreshToken = jwtService.generateToken(user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+        String accessToken = jwtService.generateToken(user.getId(), user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+        String refreshToken = jwtService.generateToken(user.getId(), user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
         UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), false);
 
         return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);

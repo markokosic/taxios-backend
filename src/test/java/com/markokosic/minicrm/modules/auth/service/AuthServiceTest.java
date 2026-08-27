@@ -170,9 +170,9 @@ public class AuthServiceTest {
 		Mockito.when(passwordEncoder.matches("newPass456", "hashedOldPassword")).thenReturn(false);
 		Mockito.when(passwordEncoder.encode("newPass456")).thenReturn("hashedNewPassword");
 		Mockito.when(userRepository.save(Mockito.any(User.class))).thenAnswer(i -> i.getArgument(0));
-		Mockito.when(jwtService.generateToken(Mockito.eq("test@test.com"), Mockito.eq(100L), Mockito.eq(Roles.ADMIN), Mockito.eq(30L)))
+		Mockito.when(jwtService.generateToken(Mockito.eq(1L), Mockito.eq("test@test.com"), Mockito.eq(100L), Mockito.eq(Roles.ADMIN), Mockito.eq(30L)))
 				.thenReturn("full-access-token");
-		Mockito.when(jwtService.generateToken(Mockito.eq("test@test.com"), Mockito.eq(100L), Mockito.eq(Roles.ADMIN), Mockito.eq(10080L)))
+		Mockito.when(jwtService.generateToken(Mockito.eq(1L), Mockito.eq("test@test.com"), Mockito.eq(100L), Mockito.eq(Roles.ADMIN), Mockito.eq(10080L)))
 				.thenReturn("full-refresh-token");
 
 		var response = authService.changePassword(request);
@@ -251,7 +251,7 @@ public class AuthServiceTest {
 		loginRequest.setPassword("tempPass123");
 
 		Mockito.when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
-		Mockito.when(jwtService.generateToken("user@test.com", 10L, Roles.PRE_AUTH, 15L))
+		Mockito.when(jwtService.generateToken(1L, "user@test.com", 10L, Roles.PRE_AUTH, 15L))
 				.thenReturn("pre-auth-token");
 
 		var response = authService.login(loginRequest);
