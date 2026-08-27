@@ -6,6 +6,7 @@ import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,37 +68,41 @@ public class UserServiceTest {
     @Test
     void testCreateUser_whenEmailIsUnique_shouldSaveAndReturnUser() {
         CreateUserRequestDTO request = new CreateUserRequestDTO(
-                "driver@test.com", "John", "Doe", "secret123", Roles.DRIVER
+                "driver@test.com", "John", "Doe", Roles.DRIVER
         );
 
         when(userRepository.existsByEmail("driver@test.com")).thenReturn(false);
-        when(passwordEncoder.encode("secret123")).thenReturn("encodedPassword");
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
 
         User savedUser = new User();
         savedUser.setId(10L);
         savedUser.setEmail("driver@test.com");
+        savedUser.setFirstName("John");
+        savedUser.setLastName("Doe");
         savedUser.setRoles(Roles.DRIVER);
         savedUser.setMustChangePassword(true);
 
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
-        UserResponseDTO responseDTO = new UserResponseDTO(10L, "John", "Doe", "driver@test.com", Roles.DRIVER, true);
-        when(userMapper.userToUserResponseDTO(savedUser)).thenReturn(responseDTO);
+        CreateUserResponseDTO responseDTO = new CreateUserResponseDTO(10L, "John", "Doe", "driver@test.com", Roles.DRIVER, true, "tempPass123");
+        when(userMapper.toCreateUserResponseDTO(eq(savedUser), anyString())).thenReturn(responseDTO);
 
-        UserResponseDTO result = userService.createUser(request);
+        CreateUserResponseDTO result = userService.createUser(request);
 
         assertNotNull(result);
-        assertEquals(10L, result.getId());
-        assertTrue(result.isMustChangePassword());
-        assertEquals(Roles.DRIVER, result.getRoles());
+        assertEquals(10L, result.id());
+        assertTrue(result.mustChangePassword());
+        assertEquals(Roles.DRIVER, result.roles());
+        assertEquals("tempPass123", result.temporaryPassword());
 
+        verify(passwordEncoder, times(1)).encode(anyString());
         verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
     void testCreateUser_whenOwnerRolePassed_shouldThrowBadRequest() {
         CreateUserRequestDTO request = new CreateUserRequestDTO(
-                "driver@test.com", "John", "Doe", "secret123", Roles.OWNER
+                "driver@test.com", "John", "Doe", Roles.OWNER
         );
 
         when(userRepository.existsByEmail("driver@test.com")).thenReturn(false);
@@ -109,7 +114,7 @@ public class UserServiceTest {
     @Test
     void testCreateUser_whenEmailExists_shouldThrowConflict() {
         CreateUserRequestDTO request = new CreateUserRequestDTO(
-                "driver@test.com", "John", "Doe", "secret123", Roles.DRIVER
+                "driver@test.com", "John", "Doe", Roles.DRIVER
         );
 
         when(userRepository.existsByEmail("driver@test.com")).thenReturn(true);

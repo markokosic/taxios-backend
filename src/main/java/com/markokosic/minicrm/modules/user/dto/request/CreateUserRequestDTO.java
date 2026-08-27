@@ -20,10 +20,6 @@ public record CreateUserRequestDTO(
         @Schema(description = "User's last name", example = "Mustermann")
         String lastName,
 
-        @NotBlank
-        @Schema(description = "Initial password for the user", example = "temporaryPassword123")
-        String password,
-
-        @Schema(description = "User role. Defaults to ADMIN if omitted.", example = "DRIVER")
+        @Schema(description = "User role", example = "DRIVER")
         Roles roles
 ) {}

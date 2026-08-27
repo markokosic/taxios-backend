@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,12 +43,12 @@ class UserControllerTest {
     private I18nService i18n;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createUser_Success() throws Exception {
         CreateUserRequestDTO requestDTO = new CreateUserRequestDTO(
-                "driver@example.com", "Max", "Mustermann", "secret123", Roles.DRIVER
+                "driver@example.com", "Max", "Mustermann", Roles.DRIVER
         );
-        UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "driver@example.com", Roles.DRIVER, true);
+        CreateUserResponseDTO userDTO = new CreateUserResponseDTO(1L, "Max", "Mustermann", "driver@example.com", Roles.DRIVER, true, "tempPass123");
 
         when(userService.createUser(any(CreateUserRequestDTO.class))).thenReturn(userDTO);
         when(i18n.getMessage("success.added")).thenReturn("Added successfully");
@@ -59,7 +60,8 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value("driver@example.com"))
                 .andExpect(jsonPath("$.data.roles").value("DRIVER"))
-                .andExpect(jsonPath("$.data.mustChangePassword").value(true));
+                .andExpect(jsonPath("$.data.mustChangePassword").value(true))
+                .andExpect(jsonPath("$.data.temporaryPassword").value("tempPass123"));
     }
 
     @Test
@@ -89,7 +91,7 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteUser_Success() throws Exception {
         doNothing().when(userService).deleteUser(1L);
         when(i18n.getMessage("success.deleted")).thenReturn("Deleted successfully");

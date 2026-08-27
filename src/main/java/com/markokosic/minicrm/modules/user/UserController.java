@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.user;
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +31,14 @@ public class UserController {
     private final I18nService i18n;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Create user", description = "Creates a new system user for the current tenant. Defaults to mustChangePassword=true.")
+    @Operation(summary = "Create user", description = "Creates a new system user for the current tenant with a generated temporary password. Defaults to mustChangePassword=true.")
     @ApiResponse(responseCode = "201", description = "User created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "409", description = "Email already exists", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> createUser(@Valid @RequestBody CreateUserRequestDTO request) {
-        UserResponseDTO user = userService.createUser(request);
+    @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN or OWNER role", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+    public ResponseEntity<ApiResponseDTO<CreateUserResponseDTO>> createUser(@Valid @RequestBody CreateUserRequestDTO request) {
+        CreateUserResponseDTO user = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, user, i18n.getMessage("success.added")));
     }
 
@@ -62,6 +66,8 @@ public class UserController {
     @ApiResponse(responseCode = "204", description = "User deleted successfully")
     @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN or OWNER role", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

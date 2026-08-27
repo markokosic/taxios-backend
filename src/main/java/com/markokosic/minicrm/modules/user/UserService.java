@@ -1,11 +1,13 @@
 package com.markokosic.minicrm.modules.user;
 
+import com.markokosic.minicrm.common.util.TemporaryPasswordGenerator;
 import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,9 +42,8 @@ public class UserService {
         );
     }
 
-
     @Transactional
-    public UserResponseDTO createUser(CreateUserRequestDTO request) {
+    public CreateUserResponseDTO createUser(CreateUserRequestDTO request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ResourceConflictException("domain.user.email.duplicate");
         }
@@ -51,16 +52,18 @@ public class UserService {
             throw new BadRequestException("domain.user.role.owner_not_allowed");
         }
 
+        String temporaryPassword = TemporaryPasswordGenerator.generate();
+
         User user = new User();
         user.setEmail(request.email());
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
-        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setRoles(request.roles() != null ? request.roles() : Roles.ADMIN);
         user.setMustChangePassword(true);
 
         User savedUser = userRepository.save(user);
-        return userMapper.userToUserResponseDTO(savedUser);
+        return userMapper.toCreateUserResponseDTO(savedUser, temporaryPassword);
     }
 
     public UserResponseDTO getUserById(Long id) {
