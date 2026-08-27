@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 10-add-user-id-to-drivers
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: drivers
+              columnName: user_id
+      changes:
+        - addColumn:
+            tableName: drivers
+            columns:
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    unique: true
+                    uniqueConstraintName: uk_drivers_user_id
+                    foreignKeyName: fk_drivers_user_id
+                    references: users(id)

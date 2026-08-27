@@ -4,6 +4,7 @@ import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationReque
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
 import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.user.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -33,6 +34,10 @@ public class Driver {
 	@TenantId
 	@Column(name = "tenant_id", nullable = false, updatable = false)
 	private Long tenantId;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", unique = true)
+	private User user;
 
 	@Column(name="first_name")
 	private String firstName;

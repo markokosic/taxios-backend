@@ -146,15 +146,14 @@ class ShiftServiceTest {
     void getMyShifts_Success() {
         Driver driver = new Driver();
         driver.setId(10L);
-        driver.setEmail("driver@taxi.com");
 
-        when(driverRepository.findByEmail("driver@taxi.com")).thenReturn(Optional.of(driver));
+        when(driverRepository.findByUserId(5L)).thenReturn(Optional.of(driver));
         when(shiftRepository.findAllFiltered(eq(10L), isNull(), isNull(), any())).thenReturn(org.springframework.data.domain.Page.empty());
 
-        var result = shiftService.getMyShifts("driver@taxi.com", org.springframework.data.domain.PageRequest.of(0, 10));
+        var result = shiftService.getMyShifts(5L, org.springframework.data.domain.PageRequest.of(0, 10));
 
         assertNotNull(result);
-        verify(driverRepository).findByEmail("driver@taxi.com");
+        verify(driverRepository).findByUserId(5L);
         verify(shiftRepository).findAllFiltered(eq(10L), isNull(), isNull(), any());
     }
 }

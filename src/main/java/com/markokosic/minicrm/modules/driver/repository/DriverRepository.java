@@ -18,6 +18,7 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 	Page<Driver> findAllByStatus(DriverStatus status, Pageable pageable);
 	List<Driver> findAllByIdIn(Set<Long> ids);
 	Optional<Driver> findByEmail(String email);
+	Optional<Driver> findByUserId(Long userId);
 
 	//TODO refactor and use mapper
 	@Query("""

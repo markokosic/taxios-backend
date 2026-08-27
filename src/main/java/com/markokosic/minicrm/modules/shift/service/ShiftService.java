@@ -223,8 +223,8 @@ public class ShiftService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponseDTO<ShiftResponseDTO> getMyShifts(String email, Pageable pageable) {
-		Driver driver = driverRepository.findByEmail(email)
+	public PageResponseDTO<ShiftResponseDTO> getMyShifts(Long userId, Pageable pageable) {
+		Driver driver = driverRepository.findByUserId(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
 		return getAllShifts(driver.getId(), null, null, pageable);
 	}
