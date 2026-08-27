@@ -1,6 +1,8 @@
 package com.markokosic.minicrm.modules.user;
 
 import com.markokosic.minicrm.modules.user.model.UserStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM users WHERE email = :email AND status = 'ACTIVE'", nativeQuery = true)
     boolean existsByEmail(@Param("email") String email);
 
+    Page<User> findAllByStatus(UserStatus status, Pageable pageable);
     List<User> findAllByStatus(UserStatus status);
 
     @Modifying

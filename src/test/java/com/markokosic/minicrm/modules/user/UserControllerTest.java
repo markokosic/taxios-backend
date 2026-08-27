@@ -2,6 +2,7 @@ package com.markokosic.minicrm.modules.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.I18nService;
+import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,13 +85,24 @@ class UserControllerTest {
     @WithMockUser(roles = "ADMIN")
     void getAllUsers_Success() throws Exception {
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
-        when(userService.getAllUsers()).thenReturn(List.of(userDTO));
+        PageResponseDTO<UserResponseDTO> pageResponse = PageResponseDTO.<UserResponseDTO>builder()
+                .content(List.of(userDTO))
+                .page(0)
+                .size(20)
+                .totalElements(1L)
+                .totalPages(1)
+                .last(true)
+                .first(true)
+                .empty(false)
+                .build();
+        when(userService.getAllUsers(any())).thenReturn(pageResponse);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched successfully");
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].email").value("max@example.com"));
+                .andExpect(jsonPath("$.data.content[0].email").value("max@example.com"))
+                .andExpect(jsonPath("$.data.totalElements").value(1));
     }
 
     @Test
@@ -103,7 +116,7 @@ class UserControllerTest {
         when(userService.updateUser(eq(1L), any())).thenReturn(userDTO);
         when(i18n.getMessage("success.updated")).thenReturn("Updated successfully");
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/users/1")
+        mockMvc.perform(put("/api/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())

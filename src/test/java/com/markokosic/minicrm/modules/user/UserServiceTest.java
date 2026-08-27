@@ -9,6 +9,7 @@ import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
+import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import com.markokosic.minicrm.modules.user.model.UserStatus;
@@ -17,6 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -209,7 +214,7 @@ public class UserServiceTest {
     }
 
     @Test
-    void testGetAllUsers_shouldReturnAllUsers() {
+    void testGetAllUsers_shouldReturnPagedUsers() {
         // Arrange
         User user1 = new User();
         user1.setId(1L);
@@ -219,19 +224,23 @@ public class UserServiceTest {
         UserResponseDTO response1 = new UserResponseDTO(1L, "Max", "Mustermann", "max@email.com");
         UserResponseDTO response2 = new UserResponseDTO(2L, "Erika", "Musterfrau", "erika@email.com");
 
-        when(userRepository.findAllByStatus(UserStatus.ACTIVE)).thenReturn(List.of(user1, user2));
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<User> userPage = new PageImpl<>(List.of(user1, user2), pageable, 2);
+
+        when(userRepository.findAllByStatus(UserStatus.ACTIVE, pageable)).thenReturn(userPage);
         when(userMapper.userToUserResponseDTO(user1)).thenReturn(response1);
         when(userMapper.userToUserResponseDTO(user2)).thenReturn(response2);
 
         // Act
-        List<UserResponseDTO> result = userService.getAllUsers();
+        PageResponseDTO<UserResponseDTO> result = userService.getAllUsers(pageable);
 
         // Assert
         assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("max@email.com", result.get(0).getEmail());
-        assertEquals("erika@email.com", result.get(1).getEmail());
-        verify(userRepository, times(1)).findAllByStatus(UserStatus.ACTIVE);
+        assertEquals(2, result.getContent().size());
+        assertEquals(2L, result.getTotalElements());
+        assertEquals("max@email.com", result.getContent().get(0).getEmail());
+        assertEquals("erika@email.com", result.getContent().get(1).getEmail());
+        verify(userRepository, times(1)).findAllByStatus(UserStatus.ACTIVE, pageable);
     }
 
     @Test

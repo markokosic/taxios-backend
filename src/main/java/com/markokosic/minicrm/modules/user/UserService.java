@@ -10,16 +10,18 @@ import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
+import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import com.markokosic.minicrm.modules.user.model.UserStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -117,10 +119,10 @@ public class UserService {
         return convertToUserResponseDto(user);
     }
 
-    public List<UserResponseDTO> getAllUsers() {
-        return userRepository.findAllByStatus(UserStatus.ACTIVE).stream()
-                .map(this::convertToUserResponseDto)
-                .collect(Collectors.toList());
+    public PageResponseDTO<UserResponseDTO> getAllUsers(Pageable pageable) {
+        Page<UserResponseDTO> page = userRepository.findAllByStatus(UserStatus.ACTIVE, pageable)
+                .map(this::convertToUserResponseDto);
+        return PageResponseDTO.from(page);
     }
 
     @Transactional

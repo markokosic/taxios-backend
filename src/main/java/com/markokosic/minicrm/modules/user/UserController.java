@@ -2,7 +2,9 @@ package com.markokosic.minicrm.modules.user;
 
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
+import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
 import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +14,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -53,11 +59,13 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all users", description = "Retrieves a list of all system users/administrators for the current tenant.")
+    @Operation(summary = "Get all users", description = "Retrieves a paginated list of all system users/administrators for the current tenant.")
     @ApiResponse(responseCode = "200", description = "Users list retrieved successfully")
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<ApiResponseDTO<List<UserResponseDTO>>> getAllUsers() {
-        List<UserResponseDTO> users = userService.getAllUsers();
+    public ResponseEntity<ApiResponseDTO<PageResponseDTO<UserResponseDTO>>> getAllUsers(
+            @ParameterObject @PageableDefault(sort = {"lastName", "id"}, direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        PageResponseDTO<UserResponseDTO> users = userService.getAllUsers(pageable);
         return ResponseEntity.ok(new ApiResponseDTO<>(true, users, i18n.getMessage("success.fetched")));
     }
 
@@ -67,7 +75,7 @@ public class UserController {
     @ApiResponse(responseCode = "400", description = "Invalid request payload or role assignment", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN or OWNER role", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO request) {
+    public ResponseEntity<ApiResponseDTO<UserResponseDTO>> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequestDTO request) {
         UserResponseDTO user = userService.updateUser(id, request);
         return ResponseEntity.ok(new ApiResponseDTO<>(true, user, i18n.getMessage("success.updated")));
     }
