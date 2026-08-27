@@ -64,6 +64,41 @@ class ShiftControllerTest {
     }
 
     @Test
+    void createMyShift_Success_WhenDriverRole() throws Exception {
+        com.markokosic.minicrm.modules.user.User driverUser = new com.markokosic.minicrm.modules.user.User();
+        driverUser.setId(5L);
+        driverUser.setEmail("driver@taxi.com");
+        driverUser.setRoles(com.markokosic.minicrm.modules.role.dto.Roles.DRIVER);
+        com.markokosic.minicrm.modules.auth.model.UserPrincipal principal = new com.markokosic.minicrm.modules.auth.model.UserPrincipal(driverUser);
+
+        var revenueEntry = new com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRevenueEntryRequestDTO(
+                com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory.REGULAR,
+                null, new BigDecimal("100.00"), null, null
+        );
+        var requestDTO = new com.markokosic.minicrm.modules.shift.dto.request.CreateMyShiftRequestDTO(
+                1L, new BigDecimal("100.00"), new BigDecimal("200.00"),
+                LocalDateTime.now(), LocalDateTime.now().plusHours(8), List.of(revenueEntry)
+        );
+
+        ShiftResponseDTO responseDTO = new ShiftResponseDTO(
+                1L, null, null, new BigDecimal("100.00"), new BigDecimal("200.00"),
+                new BigDecimal("100.00"), LocalDateTime.now(), LocalDateTime.now().plusHours(8),
+                ShiftStatus.PENDING, List.of()
+        );
+
+        when(shiftService.createMyShift(eq(5L), any())).thenReturn(responseDTO);
+        when(i18n.getMessage("success.added")).thenReturn("Shift added");
+
+        mockMvc.perform(post("/api/shifts/my")
+                        .with(user(principal))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("PENDING"));
+    }
+
+    @Test
     @WithMockUser(roles = "DRIVER")
     void getAllShifts_Forbidden_WhenDriverRole() throws Exception {
         mockMvc.perform(get("/api/shifts"))
@@ -99,5 +134,30 @@ class ShiftControllerTest {
         mockMvc.perform(get("/api/shifts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void approveShift_Success_WhenAdminRole() throws Exception {
+        ShiftResponseDTO responseDTO = new ShiftResponseDTO(
+                1L, null, null, new BigDecimal("100.00"), new BigDecimal("200.00"),
+                new BigDecimal("100.00"), LocalDateTime.now(), LocalDateTime.now().plusHours(8),
+                ShiftStatus.APPROVED, List.of()
+        );
+
+        when(shiftService.approveShift(1L)).thenReturn(responseDTO);
+        when(i18n.getMessage("success.updated")).thenReturn("Shift updated");
+
+        mockMvc.perform(post("/api/shifts/1/approve"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+    }
+
+    @Test
+    @WithMockUser(roles = "DRIVER")
+    void approveShift_Forbidden_WhenDriverRole() throws Exception {
+        mockMvc.perform(post("/api/shifts/1/approve"))
+                .andExpect(status().isForbidden());
     }
 }

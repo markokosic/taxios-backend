@@ -11,6 +11,7 @@ import com.markokosic.minicrm.modules.remuneration.RemunerationService;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
 import com.markokosic.minicrm.modules.shift.ShiftMapper;
 import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryMapper;
+import com.markokosic.minicrm.modules.shift.dto.request.CreateMyShiftRequestDTO;
 import com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRequestDTO;
 import com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRevenueEntryRequestDTO;
 import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRequestDTO;
@@ -223,9 +224,44 @@ public class ShiftService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponseDTO<ShiftResponseDTO> getMyShifts(Long userId, Pageable pageable) {
+	public PageResponseDTO<ShiftResponseDTO> 	getMyShifts(Long userId, Pageable pageable) {
 		Driver driver = driverRepository.findByUserId(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
 		return getAllShifts(driver.getId(), null, null, pageable);
+	}
+
+	@Transactional
+	public ShiftResponseDTO createMyShift(Long userId, CreateMyShiftRequestDTO request) {
+		Driver driver = driverRepository.findByUserId(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
+
+		CreateShiftRequestDTO internalRequest = new CreateShiftRequestDTO(
+				driver.getId(),
+				request.carId(),
+				request.odometerStart(),
+				request.odometerEnd(),
+				request.shiftStart(),
+				request.shiftEnd(),
+				ShiftStatus.PENDING,
+				request.revenues()
+		);
+
+		return createShift(internalRequest);
+	}
+
+	@Transactional
+	public ShiftResponseDTO approveShift(Long id) {
+		Shift shift = shiftRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
+		shift.setStatus(ShiftStatus.APPROVED);
+		return shiftMapper.toDto(shift);
+	}
+
+	@Transactional
+	public ShiftResponseDTO rejectShift(Long id) {
+		Shift shift = shiftRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.shift.not_found"));
+		shift.setStatus(ShiftStatus.REJECTED);
+		return shiftMapper.toDto(shift);
 	}
 }

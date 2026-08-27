@@ -4,6 +4,7 @@ import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.car.dto.request.CreateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.request.UpdateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.response.CarResponseDTO;
+import com.markokosic.minicrm.modules.car.dto.response.CarSummaryDTO;
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.car.model.CarStatus;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,12 @@ public class CarService {
     public CarResponseDTO getCarById(Long id) {
         Car car = getCarOrThrow(id);
         return carMapper.toDto(car);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CarSummaryDTO> getCarsForSelect() {
+        List<Car> cars = carRepository.findAllByStatusOrderByLicensePlateAsc(CarStatus.ACTIVE);
+        return carMapper.toSummaryDtoList(cars);
     }
 
     @Transactional(readOnly = true)

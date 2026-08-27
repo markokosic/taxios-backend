@@ -6,6 +6,7 @@ import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.car.dto.request.CreateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.request.UpdateCarRequestDTO;
 import com.markokosic.minicrm.modules.car.dto.response.CarResponseDTO;
+import com.markokosic.minicrm.modules.car.dto.response.CarSummaryDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,21 +25,32 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/cars", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "Cars", description = "Endpoints for managing vehicles in the CRM")
-@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 public class CarController {
 
     private final CarService carService;
     private final I18nService i18n;
+
+    @GetMapping("/select")
+    @Operation(summary = "Get all active cars for selection", description = "Fetches a lightweight list of active cars for selection dropdowns.")
+    @ApiResponse(responseCode = "200", description = "Cars list retrieved successfully")
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+    public ResponseEntity<ApiResponseDTO<List<CarSummaryDTO>>> getCarsForSelect() {
+        List<CarSummaryDTO> cars = carService.getCarsForSelect();
+        return ResponseEntity.ok(new ApiResponseDTO<>(true, cars, i18n.getMessage("success.fetched")));
+    }
 
     @PostMapping
     @Operation(summary = "Create a new car", description = "Creates a new car profile associated with the current tenant.")
     @ApiResponse(responseCode = "201", description = "Car created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - Access token missing or invalid", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<ApiResponseDTO<CarResponseDTO>> createCar(@Valid @RequestBody CreateCarRequestDTO request) {
         CarResponseDTO newCar = carService.createCar(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -50,6 +62,7 @@ public class CarController {
     @ApiResponse(responseCode = "200", description = "Car details fetched successfully")
     @ApiResponse(responseCode = "404", description = "Car not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<ApiResponseDTO<CarResponseDTO>> getCar(@PathVariable Long id) {
         CarResponseDTO car = carService.getCarById(id);
         return ResponseEntity.status(HttpStatus.OK)
@@ -60,6 +73,7 @@ public class CarController {
     @Operation(summary = "Get all cars", description = "Retrieves a paginated list of all cars for the current tenant.")
     @ApiResponse(responseCode = "200", description = "Cars list retrieved successfully")
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<ApiResponseDTO<PageResponseDTO<CarResponseDTO>>> getAllCars(
             @ParameterObject @PageableDefault(sort = {"licensePlate", "id"}, direction = Sort.Direction.ASC) Pageable pageable) {
         PageResponseDTO<CarResponseDTO> cars = carService.getAllCars(pageable);
@@ -73,6 +87,7 @@ public class CarController {
     @ApiResponse(responseCode = "400", description = "Invalid update payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "Car not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<ApiResponseDTO<CarResponseDTO>> updateCar(
             @PathVariable Long id,
             @Valid @RequestBody UpdateCarRequestDTO request) {
@@ -86,6 +101,7 @@ public class CarController {
     @ApiResponse(responseCode = "204", description = "Car deleted successfully")
     @ApiResponse(responseCode = "404", description = "Car not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
     public ResponseEntity<Void> deleteCar(@PathVariable Long id) {
         carService.deleteCar(id);
         return ResponseEntity.noContent().build();

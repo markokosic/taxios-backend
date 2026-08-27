@@ -16,6 +16,7 @@ public interface ShiftRevenueEntryRepository extends JpaRepository<ShiftRevenueE
         JOIN FETCH s.driver d
         JOIN FETCH s.car c
         WHERE s.shiftStart >= :fromDateTime AND s.shiftStart <= :toDateTime
+        AND s.status = 'APPROVED'
         AND (:driverId IS NULL OR d.id = :driverId)
         ORDER BY s.shiftStart ASC, e.id ASC
     """)

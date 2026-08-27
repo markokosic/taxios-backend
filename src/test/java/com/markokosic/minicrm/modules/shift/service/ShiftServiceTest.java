@@ -14,6 +14,7 @@ import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRevenueEntryR
 import com.markokosic.minicrm.modules.shift.model.Shift;
 import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 import com.markokosic.minicrm.modules.shift.model.ShiftRevenueEntry;
+import com.markokosic.minicrm.modules.shift.model.ShiftStatus;
 import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeRepository;
 import com.markokosic.minicrm.modules.shift.repository.ShiftRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -155,5 +156,35 @@ class ShiftServiceTest {
         assertNotNull(result);
         verify(driverRepository).findByUserId(5L);
         verify(shiftRepository).findAllFiltered(eq(10L), isNull(), isNull(), any());
+    }
+
+    @Test
+    void createMyShift_Success() {
+        when(driver.getId()).thenReturn(10L);
+        when(driverRepository.findByUserId(5L)).thenReturn(Optional.of(driver));
+        when(driverRepository.findById(10L)).thenReturn(Optional.of(driver));
+        when(carRepository.findById(10L)).thenReturn(Optional.of(car));
+        when(driver.getRemunerationConfigForEntry(eq(ShiftEntryCategory.REGULAR), any())).thenReturn(config);
+        when(remunerationService.calculateRemunerationSplit(any(), any()))
+                .thenReturn(new RemunerationSplit(new BigDecimal("60.00"), new BigDecimal("90.00")));
+        when(shiftRevenueEntryMapper.toEntity(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(entry1);
+        when(shiftMapper.toShiftEntity(any(), eq(driver), eq(car), eq(ShiftStatus.PENDING))).thenReturn(shift);
+        when(shiftRepository.save(any())).thenReturn(shift);
+        when(shiftMapper.toDto(any())).thenReturn(mock(com.markokosic.minicrm.modules.shift.dto.response.ShiftResponseDTO.class));
+
+        var revenueEntry = new com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRevenueEntryRequestDTO(
+                ShiftEntryCategory.REGULAR, null, new BigDecimal("150.00"), null, null
+        );
+        var request = new com.markokosic.minicrm.modules.shift.dto.request.CreateMyShiftRequestDTO(
+                10L, new BigDecimal("100.00"), new BigDecimal("200.00"),
+                LocalDateTime.of(2025, 5, 10, 8, 0), LocalDateTime.of(2025, 5, 10, 16, 0),
+                List.of(revenueEntry)
+        );
+
+        var result = shiftService.createMyShift(5L, request);
+
+        assertNotNull(result);
+        verify(driverRepository).findByUserId(5L);
+        verify(shiftRepository).save(any());
     }
 }

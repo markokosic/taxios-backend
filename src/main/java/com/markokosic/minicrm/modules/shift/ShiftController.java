@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.shift;
 import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
+import com.markokosic.minicrm.modules.shift.dto.request.CreateMyShiftRequestDTO;
 import com.markokosic.minicrm.modules.shift.dto.request.CreateShiftRequestDTO;
 import com.markokosic.minicrm.modules.shift.dto.request.UpdateShiftRequestDTO;
 import com.markokosic.minicrm.modules.shift.dto.response.ShiftResponseDTO;
@@ -49,6 +50,19 @@ public class ShiftController {
 	) {
 		PageResponseDTO<ShiftResponseDTO> shifts = shiftService.getMyShifts(principal.getId(), pageable);
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, shifts, i18n.getMessage("success.fetched")));
+	}
+
+	@PostMapping(value = "/my", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Create my shift", description = "Logs a new shift for the currently authenticated driver.")
+	@ApiResponse(responseCode = "201", description = "Shift created successfully")
+	@ApiResponse(responseCode = "400", description = "Invalid shift data", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> createMyShift(
+			@AuthenticationPrincipal UserPrincipal principal,
+			@Valid @RequestBody CreateMyShiftRequestDTO request
+	) {
+		ShiftResponseDTO created = shiftService.createMyShift(principal.getId(), request);
+		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, created, i18n.getMessage("success.added")));
 	}
 
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -99,5 +113,21 @@ public class ShiftController {
 	public ResponseEntity<ApiResponseDTO<Void>> deleteShift(@PathVariable Long id) {
 		shiftService.deleteShift(id);
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, null, i18n.getMessage("success.deleted")));
+	}
+
+	@PostMapping(value = "/{id}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Approve a shift", description = "Sets the status of a shift to APPROVED.")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> approveShift(@PathVariable Long id) {
+		ShiftResponseDTO approved = shiftService.approveShift(id);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, approved, i18n.getMessage("success.updated")));
+	}
+
+	@PostMapping(value = "/{id}/reject", produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Reject a shift", description = "Sets the status of a shift to REJECTED.")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<ShiftResponseDTO>> rejectShift(@PathVariable Long id) {
+		ShiftResponseDTO rejected = shiftService.rejectShift(id);
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, rejected, i18n.getMessage("success.updated")));
 	}
 }

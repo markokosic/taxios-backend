@@ -121,4 +121,24 @@ class CarControllerTest {
         mockMvc.perform(get("/api/cars"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(roles = "DRIVER")
+    void getCarsForSelect_Success_WhenDriverRole() throws Exception {
+        var summaryDTO = new com.markokosic.minicrm.modules.car.dto.response.CarSummaryDTO(1L, "M-AB1234", "Toyota", "Prius");
+        when(carService.getCarsForSelect()).thenReturn(List.of(summaryDTO));
+        when(i18n.getMessage("success.fetched")).thenReturn("Cars fetched");
+
+        mockMvc.perform(get("/api/cars/select"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].licensePlate").value("M-AB1234"));
+    }
+
+    @Test
+    @WithMockUser(roles = "DRIVER")
+    void deleteCar_Forbidden_WhenDriverRole() throws Exception {
+        mockMvc.perform(delete("/api/cars/1"))
+                .andExpect(status().isForbidden());
+    }
 }
