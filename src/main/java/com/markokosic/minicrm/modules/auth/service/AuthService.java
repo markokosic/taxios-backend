@@ -111,6 +111,7 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
+                .roles(user.getRoles())
                 .tenantId(user.getTenantId())
                 .tenantName(tenantName)
                 .build();

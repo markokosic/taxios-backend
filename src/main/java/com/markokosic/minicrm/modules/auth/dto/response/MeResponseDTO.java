@@ -1,5 +1,6 @@
 package com.markokosic.minicrm.modules.auth.dto.response;
 
+import com.markokosic.minicrm.modules.role.dto.Roles;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,7 @@ public class MeResponseDTO {
     private String firstName;
     private String lastName;
     private String email;
+    private Roles roles;
     private Long tenantId;
     private String tenantName;
 }

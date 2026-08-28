@@ -62,6 +62,7 @@ class AuthControllerTest {
                 .firstName("Max")
                 .lastName("Mustermann")
                 .email("max@example.com")
+                .roles(com.markokosic.minicrm.modules.role.dto.Roles.ADMIN)
                 .tenantId(10L)
                 .tenantName("TestTenant")
                 .build();
@@ -71,6 +72,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value("max@example.com"))
+                .andExpect(jsonPath("$.data.roles").value("ADMIN"))
                 .andExpect(jsonPath("$.data.tenantName").value("TestTenant"));
     }
 

@@ -136,6 +136,7 @@ public class AuthServiceTest {
 
 		assertNotNull(result);
 		assertEquals("test@test.com", result.getEmail());
+		assertEquals(Roles.OWNER, result.getRoles());
 		assertEquals("TEST TENANT", result.getTenantName());
 		assertEquals(100L, result.getTenantId());
 
