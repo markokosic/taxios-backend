@@ -116,8 +116,8 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "PRE_AUTH")
-    void getAllCars_Forbidden_WhenPreAuthRole() throws Exception {
+    @WithMockUser(roles = "GUEST")
+    void getAllCars_Forbidden_WhenUnknownRole() throws Exception {
         mockMvc.perform(get("/api/cars"))
                 .andExpect(status().isForbidden());
     }

@@ -51,7 +51,7 @@ public class UserService {
 
     @Transactional
     public CreateUserResponseDTO createUser(CreateUserRequestDTO request) {
-        if (request.roles() == Roles.OWNER || request.roles() == Roles.PRE_AUTH) {
+        if (request.roles() == Roles.OWNER) {
             throw new BadRequestException("domain.user.role.owner_not_allowed");
         }
 
@@ -134,7 +134,7 @@ public class UserService {
             throw new ResourceNotFoundException("domain.user.not_found");
         }
 
-        if (request.roles() == Roles.OWNER || request.roles() == Roles.PRE_AUTH) {
+        if (request.roles() == Roles.OWNER) {
             throw new BadRequestException("domain.user.role.owner_not_allowed");
         }
 

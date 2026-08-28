@@ -79,9 +79,7 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
 
-            Roles tokenRole = user.isMustChangePassword() ? Roles.PRE_AUTH : user.getRoles();
-            Long accessExpiration = user.isMustChangePassword() ? 15L : tokenProperties.getAccess().getExpirationMinutes();
-            String accessToken = jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), tokenRole, accessExpiration);
+            String accessToken = jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
             String refreshToken = user.isMustChangePassword()
                     ? ""
                     : jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
@@ -111,7 +109,8 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .roles(user.getRoles())
+                .role(user.getRoles())
+                .mustChangePassword(user.isMustChangePassword())
                 .tenantId(user.getTenantId())
                 .tenantName(tenantName)
                 .build();

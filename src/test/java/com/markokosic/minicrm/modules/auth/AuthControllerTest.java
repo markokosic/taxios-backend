@@ -62,7 +62,8 @@ class AuthControllerTest {
                 .firstName("Max")
                 .lastName("Mustermann")
                 .email("max@example.com")
-                .roles(com.markokosic.minicrm.modules.role.dto.Roles.ADMIN)
+                .role(com.markokosic.minicrm.modules.role.dto.Roles.ADMIN)
+                .mustChangePassword(false)
                 .tenantId(10L)
                 .tenantName("TestTenant")
                 .build();
@@ -72,7 +73,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value("max@example.com"))
-                .andExpect(jsonPath("$.data.roles").value("ADMIN"))
+                .andExpect(jsonPath("$.data.role").value("ADMIN"))
+                .andExpect(jsonPath("$.data.mustChangePassword").value(false))
                 .andExpect(jsonPath("$.data.tenantName").value("TestTenant"));
     }
 

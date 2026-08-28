@@ -4,6 +4,5 @@ public enum Roles {
 	OWNER,
 	ADMIN,
 	DRIVER,
-	BACKOFFICE,
-	PRE_AUTH
+	BACKOFFICE
 }

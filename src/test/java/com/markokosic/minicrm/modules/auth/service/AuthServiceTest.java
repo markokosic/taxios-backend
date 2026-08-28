@@ -136,7 +136,8 @@ public class AuthServiceTest {
 
 		assertNotNull(result);
 		assertEquals("test@test.com", result.getEmail());
-		assertEquals(Roles.OWNER, result.getRoles());
+		assertEquals(Roles.OWNER, result.getRole());
+		assertFalse(result.isMustChangePassword());
 		assertEquals("TEST TENANT", result.getTenantName());
 		assertEquals(100L, result.getTenantId());
 
@@ -239,7 +240,7 @@ public class AuthServiceTest {
 	}
 
 	@Test
-	void testLogin_whenMustChangePasswordIsTrue_shouldIssuePreAuthToken() {
+	void testLogin_whenMustChangePasswordIsTrue_shouldIssueNoRefreshToken() {
 		User user = new User();
 		user.setId(1L);
 		user.setEmail("user@test.com");
@@ -251,14 +252,18 @@ public class AuthServiceTest {
 		loginRequest.setEmail("user@test.com");
 		loginRequest.setPassword("tempPass123");
 
+		TokenProperties.Token accessProps = new TokenProperties.Token();
+		accessProps.setExpirationMinutes(30L);
+		Mockito.when(tokenProperties.getAccess()).thenReturn(accessProps);
+
 		Mockito.when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
-		Mockito.when(jwtService.generateToken(1L, "user@test.com", 10L, Roles.PRE_AUTH, 15L))
-				.thenReturn("pre-auth-token");
+		Mockito.when(jwtService.generateToken(1L, "user@test.com", 10L, Roles.DRIVER, 30L))
+				.thenReturn("access-token");
 
 		var response = authService.login(loginRequest);
 
 		assertNotNull(response);
-		assertEquals("pre-auth-token", response.getAccessToken());
+		assertEquals("access-token", response.getAccessToken());
 		assertEquals("", response.getRefreshToken());
 		assertTrue(response.getUser().isMustChangePassword());
 	}

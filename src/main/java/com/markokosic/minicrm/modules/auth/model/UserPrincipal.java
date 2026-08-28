@@ -20,10 +20,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String roleName = user.isMustChangePassword()
-                ? "ROLE_" + Roles.PRE_AUTH.name()
-                : "ROLE_" + user.getRoles().name();
-        return Collections.singleton(new SimpleGrantedAuthority(roleName));
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRoles().name()));
     }
 
 
