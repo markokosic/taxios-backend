@@ -1,6 +1,6 @@
 package com.markokosic.minicrm.modules.auth.service;
 
-
+import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.User;
 import com.markokosic.minicrm.modules.user.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -16,7 +16,6 @@ import javax.crypto.SecretKey;
 import java.util.*;
 import java.util.function.Function;
 
-
 @Service
 public class JWTService {
 
@@ -25,14 +24,16 @@ public class JWTService {
 
     private final UserRepository userRepository;
 
-    public JWTService(UserRepository userRepository ){
+    public JWTService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    public String generateToken(String email, Long tenantId, Long expirationInMinutes) {
+    public String generateToken(Long userId, String email, Long tenantId, Roles role, Long expirationInMinutes) {
 
         Map<String, Object> claims = new HashMap<>();
-            claims.put("tenantId", tenantId);
+        claims.put("userId", userId);
+        claims.put("tenantId", tenantId);
+        claims.put("role", role.name());
 
         return Jwts.builder()
                 .claims()
@@ -43,7 +44,6 @@ public class JWTService {
                 .and()
                 .signWith(getKey())
                 .compact();
-
     }
 
     private SecretKey getKey() {
@@ -52,12 +52,19 @@ public class JWTService {
     }
 
     public String extractEmail(String token) {
-        // extract the username from jwt token
         return extractClaim(token, Claims::getSubject);
     }
 
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
+    }
+
     public Long extractTenantId(String token) {
-        return extractClaim(token, claims -> claims.get("tenantId", Long.class ));
+        return extractClaim(token, claims -> claims.get("tenantId", Long.class));
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
@@ -74,7 +81,6 @@ public class JWTService {
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
-        //TODO REFACTOR TO SHOW EMAIL NOT USERNAME
         if (isTokenSigned(token)) {
             return false;
         }
@@ -84,7 +90,7 @@ public class JWTService {
         }
 
         final String userEmail = extractEmail(token);
-        return ( userEmail.equals(userDetails.getUsername())  );
+        return (userEmail.equals(userDetails.getUsername()));
     }
 
     public boolean validateRefreshToken(String token) {
@@ -110,15 +116,12 @@ public class JWTService {
         try {
             Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
             return false;
-        } catch (JwtException e){
+        } catch (JwtException e) {
             return true;
         }
     }
 
-
     public boolean isTokenExpired(String token) {
-            return extractAllClaims(token).getExpiration().before(new Date());
+        return extractAllClaims(token).getExpiration().before(new Date());
     }
-
-
 }

@@ -9,6 +9,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", uses = {RemunerationConfigMapper.class})
 public interface DriverMapper {
 
+	@Mapping(target = "userId", source = "user.id")
 	@Mapping(target = "currentRemunerationConfigs", source = "driver", qualifiedByName = "mapCurrentConfigs")
 	DriverResponseDTO toDto(Driver driver, @Context RemunerationConfigMapper remunerationConfigMapper);
 

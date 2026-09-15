@@ -12,10 +12,10 @@ public class I18nService {
 	private final MessageSource messageSource;
 
 	public String getMessage(String key) {
-		return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
+		return messageSource.getMessage(key, null, key, LocaleContextHolder.getLocale());
 	}
 
 	public String getMessage(String key, Object... args) {
-		return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+		return messageSource.getMessage(key, args, key, LocaleContextHolder.getLocale());
 	}
 }

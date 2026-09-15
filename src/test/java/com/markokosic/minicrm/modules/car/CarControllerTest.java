@@ -43,7 +43,7 @@ class CarControllerTest {
     private I18nService i18n;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createCar_Success() throws Exception {
         CreateCarRequestDTO requestDTO = new CreateCarRequestDTO("M-AB1234", "Prius", "Toyota", "120");
         CarResponseDTO responseDTO = new CarResponseDTO(1L, "M-AB1234", "Prius", "Toyota", "120", CarStatus.ACTIVE, null, null);
@@ -60,7 +60,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getCar_Success() throws Exception {
         CarResponseDTO responseDTO = new CarResponseDTO(1L, "M-AB1234", "Prius", "Toyota", "120", CarStatus.ACTIVE, null, null);
 
@@ -74,7 +74,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getAllCars_Success() throws Exception {
         CarResponseDTO responseDTO = new CarResponseDTO(1L, "M-AB1234", "Prius", "Toyota", "120", CarStatus.ACTIVE, null, null);
         PageResponseDTO<CarResponseDTO> pageResponse = new PageResponseDTO<>(List.of(responseDTO), 1, 10, 1L, 1, true, true);
@@ -89,7 +89,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void updateCar_Success() throws Exception {
         UpdateCarRequestDTO requestDTO = new UpdateCarRequestDTO("M-AB9999", "Prius", "Toyota", "120");
         CarResponseDTO responseDTO = new CarResponseDTO(1L, "M-AB9999", "Prius", "Toyota", "120", CarStatus.ACTIVE, null, null);
@@ -106,12 +106,39 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteCar_Success() throws Exception {
         doNothing().when(carService).deleteCar(1L);
         when(i18n.getMessage("success.deleted")).thenReturn("Car deleted");
 
         mockMvc.perform(delete("/api/cars/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(roles = "GUEST")
+    void getAllCars_Forbidden_WhenUnknownRole() throws Exception {
+        mockMvc.perform(get("/api/cars"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "DRIVER")
+    void getCarsForSelect_Success_WhenDriverRole() throws Exception {
+        var summaryDTO = new com.markokosic.minicrm.modules.car.dto.response.CarSummaryDTO(1L, "M-AB1234", "Toyota", "Prius");
+        when(carService.getCarsForSelect()).thenReturn(List.of(summaryDTO));
+        when(i18n.getMessage("success.fetched")).thenReturn("Cars fetched");
+
+        mockMvc.perform(get("/api/cars/select"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].licensePlate").value("M-AB1234"));
+    }
+
+    @Test
+    @WithMockUser(roles = "DRIVER")
+    void deleteCar_Forbidden_WhenDriverRole() throws Exception {
+        mockMvc.perform(delete("/api/cars/1"))
+                .andExpect(status().isForbidden());
     }
 }

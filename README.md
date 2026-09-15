@@ -191,7 +191,7 @@ erDiagram
         date valid_until
         numeric driver_revenue_share_percentage
         numeric driver_min_payout
-        numeric flat_rate_fee
+        numeric driver_flat_rate_payout_per_shift
         numeric weekly_company_settlement
         int settlement_day
     }

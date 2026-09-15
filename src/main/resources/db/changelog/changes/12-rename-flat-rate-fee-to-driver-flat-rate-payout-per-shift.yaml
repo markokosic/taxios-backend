@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename-flat-rate-fee-to-driver-flat-rate-payout-per-shift
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: driver_remuneration_configs
+            columnName: flat_rate_fee
+      changes:
+        - renameColumn:
+            tableName: driver_remuneration_configs
+            oldColumnName: flat_rate_fee
+            newColumnName: driver_flat_rate_payout_per_shift
+            columnDataType: numeric(19, 2)

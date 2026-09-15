@@ -1,0 +1,27 @@
+package com.markokosic.minicrm.modules.user.dto.request;
+
+import com.markokosic.minicrm.modules.role.dto.Roles;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+@Schema(description = "Request payload for updating an existing user")
+public record UpdateUserRequestDTO(
+        @NotBlank
+        @Email
+        @Schema(description = "User's email address", example = "driver@example.com")
+        String email,
+
+        @NotBlank
+        @Schema(description = "User's first name", example = "Max")
+        String firstName,
+
+        @NotBlank
+        @Schema(description = "User's last name", example = "Mustermann")
+        String lastName,
+
+        @NotNull
+        @Schema(description = "User role", example = "ADMIN")
+        Roles roles
+) {}

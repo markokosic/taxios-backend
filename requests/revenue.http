@@ -77,7 +77,7 @@ Cookie: accessToken={{accessToken}}
 }
 
 ### 4. Create FLAT_RATE_TRIP (Pauschalfahrt) Revenue
-# Driver 12 should have a FLAT_RATE remuneration config active (e.g. flatRateFee = 80.00)
+# Driver 12 should have a FLAT_RATE remuneration config active (e.g. driverFlatRatePayoutPerShift = 80.00)
 POST {{host}}{{api}}
 Content-Type: application/json
 Cookie: accessToken={{accessToken}}

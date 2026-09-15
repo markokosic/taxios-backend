@@ -1,0 +1,184 @@
+databaseChangeLog:
+  - changeSet:
+      id: 15-ensure-shift-settlements-populated
+      author: mkosic
+      changes:
+        - sql:
+            comment: "Ensure all shifts have a shift_settlement record populated from historical revenues"
+            sql: |
+              INSERT INTO shift_settlements (tenant_id, shift_id, total_revenue, driver_remuneration, company_remuneration, settled_at)
+              SELECT s.tenant_id, s.id, COALESCE(SUM(e.revenue), 0), COALESCE(SUM(e.driver_remuneration), 0), COALESCE(SUM(e.company_remuneration), 0), NOW()
+              FROM shifts s
+              JOIN shift_revenue_entries e ON s.id = e.shift_id
+              WHERE NOT EXISTS (SELECT 1 FROM shift_settlements ss WHERE ss.shift_id = s.id)
+              GROUP BY s.id, s.tenant_id;
+
+  - changeSet:
+      id: 15-add-weekly-driver-rent-to-shifts
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: shifts
+              columnName: weekly_driver_rent
+      changes:
+        - addColumn:
+            tableName: shifts
+            columns:
+              - column:
+                  name: weekly_driver_rent
+                  type: numeric(19, 2)
+        - sql:
+            comment: "Migrate weekly rent from shift_revenue_entries directly to shifts"
+            sql: |
+              UPDATE shifts s
+              SET weekly_driver_rent = (
+                  SELECT COALESCE(SUM(sre.revenue), 0)
+                  FROM shift_revenue_entries sre
+                  WHERE sre.shift_id = s.id
+                  AND sre.entry_category = 'WEEKLY'
+              )
+              WHERE EXISTS (
+                  SELECT 1 FROM shift_revenue_entries sre
+                  WHERE sre.shift_id = s.id
+                  AND sre.entry_category = 'WEEKLY'
+              );
+
+  - changeSet:
+      id: 15-rename-min-driver-payout-to-per-shift
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: remuneration_percentage_configs
+            columnName: min_driver_payout
+      changes:
+        - renameColumn:
+            tableName: remuneration_percentage_configs
+            oldColumnName: min_driver_payout
+            newColumnName: min_driver_payout_per_shift
+            columnDataType: numeric(19, 2)
+
+  - changeSet:
+      id: 15-clean-revenue-entries
+      author: mkosic
+      changes:
+        - sql:
+            comment: "Adjust total_revenue in settlements to reflect pure ride revenues, then remove WEEKLY entries"
+            sql: |
+              UPDATE shift_settlements ss
+              SET total_revenue = COALESCE((
+                  SELECT SUM(sre.revenue)
+                  FROM shift_revenue_entries sre
+                  WHERE sre.shift_id = ss.shift_id
+                  AND sre.entry_category != 'WEEKLY'
+              ), 0)
+              WHERE EXISTS (
+                  SELECT 1 FROM shift_revenue_entries sre
+                  WHERE sre.shift_id = ss.shift_id
+                  AND sre.entry_category = 'WEEKLY'
+              );
+
+              DELETE FROM shift_revenue_entries WHERE entry_category = 'WEEKLY';
+        - dropColumn:
+            tableName: shift_revenue_entries
+            columnName: company_remuneration
+        - dropColumn:
+            tableName: shift_revenue_entries
+            columnName: driver_remuneration
+        - dropColumn:
+            tableName: shift_revenue_entries
+            columnName: weekly_driver_rent
+
+  - changeSet:
+      id: 15-drop-weekly-rent-from-settlements-if-exists
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: shift_settlements
+            columnName: weekly_driver_rent
+      changes:
+        - dropColumn:
+            tableName: shift_settlements
+            columnName: weekly_driver_rent
+
+  - changeSet:
+      id: 15-create-shift-applied-configs
+      author: mkosic
+      changes:
+        - createTable:
+            tableName: shift_applied_remuneration_configs
+            columns:
+              - column:
+                  name: shift_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shift_applied_remuneration_configs
+              - column:
+                  name: config_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shift_applied_remuneration_configs
+        - addForeignKeyConstraint:
+            baseTableName: shift_applied_remuneration_configs
+            baseColumnNames: shift_id
+            referencedTableName: shifts
+            referencedColumnNames: id
+            constraintName: fk_sac_shift
+        - addForeignKeyConstraint:
+            baseTableName: shift_applied_remuneration_configs
+            baseColumnNames: config_id
+            referencedTableName: driver_remuneration_configs
+            referencedColumnNames: id
+            constraintName: fk_sac_config
+
+  - changeSet:
+      id: 15-drop-remuneration-version-id-from-settlements
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: shift_settlements
+            columnName: remuneration_version_id
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: shift_settlements
+            constraintName: fk_shift_settlements_remuneration
+        - dropColumn:
+            tableName: shift_settlements
+            columnName: remuneration_version_id
+
+  - changeSet:
+      id: 15-populate-shift-applied-configs
+      author: mkosic
+      changes:
+        - sql:
+            comment: "Migrate historical applied configs from shift_revenue_entries to shift_applied_remuneration_configs"
+            sql: |
+              INSERT INTO shift_applied_remuneration_configs (shift_id, config_id)
+              SELECT DISTINCT shift_id, remuneration_version_id
+              FROM shift_revenue_entries
+              WHERE remuneration_version_id IS NOT NULL
+              ON CONFLICT DO NOTHING;
+
+  - changeSet:
+      id: 15-drop-remuneration-version-id-from-revenue-entries
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: shift_revenue_entries
+            columnName: remuneration_version_id
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: shift_revenue_entries
+            constraintName: fk_shift_revenue_entries_remuneration
+        - dropColumn:
+            tableName: shift_revenue_entries
+            columnName: remuneration_version_id

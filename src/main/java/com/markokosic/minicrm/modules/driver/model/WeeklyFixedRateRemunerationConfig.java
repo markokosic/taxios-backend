@@ -8,6 +8,8 @@ import com.markokosic.minicrm.modules.remuneration.WeeklyFixedRateRemunerationCa
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
@@ -18,6 +20,8 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @Setter
+@Table(name = "remuneration_weekly_rent_configs")
+@PrimaryKeyJoinColumn(name = "id")
 @DiscriminatorValue("WEEKLY_FIXED_RATE")
 public class WeeklyFixedRateRemunerationConfig extends DriverRemunerationConfig {
 
@@ -35,12 +39,12 @@ public class WeeklyFixedRateRemunerationConfig extends DriverRemunerationConfig 
 	}
 
 	@Override
-	public boolean isIdenticalTo(CreateRemunerationRequestDTO dto) {
-		if (!(dto instanceof CreateWeeklyFixedRemunerationConfigDTO wDto)) {
+	public boolean isIdenticalTo(DriverRemunerationConfig other) {
+		if (!(other instanceof WeeklyFixedRateRemunerationConfig wOther)) {
 			return false;
 		}
-		return areEqual(this.weeklyFixedCompanySettlement, wDto.weeklyFixedCompanySettlement())
-				&& java.util.Objects.equals(this.settlementDay, wDto.settlementDay());
+		return areEqual(this.weeklyFixedCompanySettlement, wOther.weeklyFixedCompanySettlement)
+				&& java.util.Objects.equals(this.settlementDay, wOther.settlementDay);
 	}
 
 
