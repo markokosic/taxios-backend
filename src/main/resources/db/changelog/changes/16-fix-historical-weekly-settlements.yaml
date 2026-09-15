@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 16-normalize-historical-weekly-settlements-v4
+      author: mkosic
+      changes:
+        - sql:
+            comment: "Normalize historical weekly shift settlements using current driver config"
+            sql: |
+              -- Step 1: Align total_revenue and remuneration fields for historical entries
+              WITH driver_configs AS (
+                  SELECT DISTINCT ON (drc.driver_id) drc.driver_id, rc.weekly_company_settlement, rc.settlement_day, drc.id as config_id
+                  FROM driver_remuneration_configs drc
+                  JOIN remuneration_weekly_rent_configs rc ON rc.id = drc.id
+                  ORDER BY drc.driver_id, drc.id DESC
+              )
+              UPDATE shift_settlements ss
+              SET 
+                  total_revenue = s.weekly_driver_rent,
+                  
+                  company_remuneration = CASE 
+                      WHEN EXTRACT(ISODOW FROM s.shift_start) = dc.settlement_day THEN dc.weekly_company_settlement
+                      ELSE 0 
+                  END,
+                  
+                  driver_remuneration = s.weekly_driver_rent - (
+                      CASE 
+                          WHEN EXTRACT(ISODOW FROM s.shift_start) = dc.settlement_day THEN dc.weekly_company_settlement
+                          ELSE 0 
+                      END
+                  )
+              FROM shifts s, driver_configs dc
+              WHERE ss.shift_id = s.id
+                AND dc.driver_id = s.driver_id
+                AND ss.total_revenue = 0 
+                AND s.weekly_driver_rent IS NOT NULL 
+                AND s.weekly_driver_rent > 0
+                AND ss.company_remuneration = s.weekly_driver_rent
+                AND ss.driver_remuneration = -s.weekly_driver_rent;
+
+              -- Step 2: Clear redundant weekly_driver_rent allocations on non-settlement days
+              WITH driver_configs AS (
+                  SELECT DISTINCT ON (drc.driver_id) drc.driver_id, rc.weekly_company_settlement, rc.settlement_day, drc.id as config_id
+                  FROM driver_remuneration_configs drc
+                  JOIN remuneration_weekly_rent_configs rc ON rc.id = drc.id
+                  ORDER BY drc.driver_id, drc.id DESC
+              )
+              UPDATE shifts s
+              SET weekly_driver_rent = CASE 
+                      WHEN EXTRACT(ISODOW FROM s.shift_start) = dc.settlement_day THEN dc.weekly_company_settlement
+                      ELSE NULL 
+                  END
+              FROM shift_settlements ss, driver_configs dc
+              WHERE s.id = ss.shift_id
+                AND dc.driver_id = s.driver_id
+                AND ss.total_revenue = s.weekly_driver_rent
+                AND s.weekly_driver_rent IS NOT NULL;
+
+              -- Step 3: Recreate deleted revenue entries as REGULAR entries for display purposes
+              INSERT INTO shift_revenue_entries (tenant_id, shift_id, entry_category, revenue)
+              SELECT s.tenant_id, s.id, 'REGULAR', ss.total_revenue
+              FROM shifts s
+              JOIN shift_settlements ss ON ss.shift_id = s.id
+              WHERE ss.total_revenue > 0
+                AND NOT EXISTS (
+                    SELECT 1 FROM shift_revenue_entries sre WHERE sre.shift_id = s.id
+                );
