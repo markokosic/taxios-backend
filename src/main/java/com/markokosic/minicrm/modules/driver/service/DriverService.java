@@ -2,33 +2,38 @@ package com.markokosic.minicrm.modules.driver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
+import com.markokosic.minicrm.exception.ResourceConflictException;
 import com.markokosic.minicrm.modules.driver.DriverMapper;
 import com.markokosic.minicrm.modules.driver.RemunerationConfigMapper;
-import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
-import com.markokosic.minicrm.modules.driver.dto.request.CreateFlatRateRemunerationConfigDTO;
-import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
-import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.*;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverRevenueOptionDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.model.Driver;
 import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.DriverStatus;
+import com.markokosic.minicrm.modules.driver.model.FlatRateRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.repository.DriverRemunerationConfigRepository;
 import com.markokosic.minicrm.modules.driver.repository.DriverRepository;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
-import com.markokosic.minicrm.modules.shift.FlatRateType;
-import com.markokosic.minicrm.modules.shift.FlatRateTypeStatus;
-import com.markokosic.minicrm.modules.shift.FlatRateTypeRepository;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateTypeStatus;
+import com.markokosic.minicrm.modules.flatratetype.repository.FlatRateTypeRepository;
 import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceNotFoundException;
-import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.user.UserRepository;
+import com.markokosic.minicrm.modules.user.UserService;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -42,6 +47,8 @@ public class DriverService {
 	private final DriverLookupService driverLookupService;
 	private final DriverRemunerationConfigRepository driverRemunerationConfigRepository;
 	private final FlatRateTypeRepository flatRateTypeRepository;
+	private final UserRepository userRepository;
+	private final UserService userService;
 
 	@Transactional
 	public DriverResponseDTO createDriver(CreateDriverRequestDTO request) {
@@ -51,14 +58,7 @@ public class DriverService {
 				.map(dto -> mapToRemunerationEntity(dto, driver))
 				.toList();
 
-		boolean hasDuplicates = configs.size() != configs.stream()
-				.map(c -> c.getType() + "_" + (c.getFlatRateType() != null ? c.getFlatRateType().getId() : "ALL"))
-				.distinct()
-				.count();
-
-		if (hasDuplicates) {
-			throw new BadRequestException("domain.driver.multiple_configurations");
-		}
+		validateRemunerationConfigs(configs);
 
 		driver.initializeWithRemunerationConfigs(configs);
 
@@ -90,29 +90,32 @@ public class DriverService {
 		driverMapper.updateEntityFromDto(request, driver);
 
 		if (request.remunerationConfigs() != null) {
-			boolean hasDuplicates = request.remunerationConfigs().size() != request.remunerationConfigs().stream()
-					.map(dto -> {
-						if (dto instanceof CreateFlatRateRemunerationConfigDTO flatDto) {
-							return dto.remunerationModelType() + "_" + (flatDto.flatRateTypeId() != null ? flatDto.flatRateTypeId() : "ALL");
-						}
-						return dto.remunerationModelType().name();
-					})
-					.distinct()
-					.count();
+			List<DriverRemunerationConfig> newConfigs = request.remunerationConfigs().stream()
+					.map(dto -> mapToRemunerationEntity(dto, driver))
+					.toList();
 
-			if (hasDuplicates) {
-				throw new BadRequestException("domain.driver.multiple_configurations");
-			}
+			validateRemunerationConfigs(newConfigs);
 
-			driver.syncRemunerationConfigs(
-					request.remunerationConfigs(),
-					dto -> mapToRemunerationEntity(dto, driver)
-			);
+			driver.syncRemunerationConfigs(newConfigs);
 		}
 
 		driverRepository.save(driver);
 		return driverMapper.toDto(driver, remunerationConfigMapper);
 
+	}
+
+	@Transactional(readOnly = true)
+	public DriverResponseDTO getMyDriverProfile(Long userId) {
+		Driver driver = driverRepository.findByUserId(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
+		return driverMapper.toDto(driver, remunerationConfigMapper);
+	}
+
+	@Transactional(readOnly = true)
+	public List<DriverRevenueOptionDTO> getMyRevenueOptions(Long userId) {
+		Driver driver = driverRepository.findByUserId(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("domain.driver.not_found"));
+		return getRevenueOptionsForDriver(driver.getId());
 	}
 
 	@Transactional(readOnly = true)
@@ -123,11 +126,11 @@ public class DriverService {
 		List<DriverRevenueOptionDTO> options = new java.util.ArrayList<>();
 
 		// 1. Regular Trips (Taxameter)
-		boolean hasPercentage = activeConfigs.stream()
-				.anyMatch(c -> c.getType() == RemunerationModelType.PERCENTAGE_SHARE);
-		if (hasPercentage) {
+		boolean hasRegular = activeConfigs.stream()
+				.anyMatch(c -> c.getType() == RemunerationModelType.PERCENTAGE_SHARE || c.getType() == RemunerationModelType.WEEKLY_FIXED_RATE);
+		if (hasRegular || activeConfigs.isEmpty()) {
 			options.add(new DriverRevenueOptionDTO(
-					ShiftEntryCategory.REGULAR, null, "Regular Fare (Taxameter)", null
+					ShiftEntryCategory.REGULAR, null, "Regular Fare (Taxameter)", null, null
 			));
 		}
 
@@ -138,8 +141,13 @@ public class DriverService {
 		if (hasAnyFlatRate) {
 			List<FlatRateType> activeFlatRates = flatRateTypeRepository.findAllByCurrentIsTrueAndStatus(FlatRateTypeStatus.ACTIVE);
 			for (FlatRateType fr : activeFlatRates) {
+				DriverRemunerationConfig config = driver.getRemunerationConfigForEntry(ShiftEntryCategory.FLAT_RATE, fr);
+				BigDecimal driverPayout = null;
+				if (config instanceof com.markokosic.minicrm.modules.driver.model.FlatRateRemunerationConfig frc) {
+					driverPayout = frc.getDriverFlatRatePayoutPerShift();
+				}
 				options.add(new DriverRevenueOptionDTO(
-						ShiftEntryCategory.FLAT_RATE, fr.getId(), fr.getName(), fr.getDefaultPrice()
+						ShiftEntryCategory.FLAT_RATE, fr.getId(), fr.getName(), fr.getDefaultPrice(), driverPayout
 				));
 			}
 		}
@@ -149,7 +157,7 @@ public class DriverService {
 				.anyMatch(c -> c.getType() == RemunerationModelType.WEEKLY_FIXED_RATE);
 		if (hasWeekly) {
 			options.add(new DriverRevenueOptionDTO(
-					ShiftEntryCategory.WEEKLY, null, "Weekly Fixed Fee / Rental", null
+					ShiftEntryCategory.WEEKLY, null, "Weekly Fixed Fee / Rental", null, null
 			));
 		}
 
@@ -158,8 +166,14 @@ public class DriverService {
 
 	@Transactional
 	public void deleteDriver(Long id) {
-		Driver customer = validateDriverDeletion(id);
-		customer.setStatus(DriverStatus.DELETED);
+		Driver driver = validateDriverDeletion(id);
+		driver.setStatus(DriverStatus.DELETED);
+		if (driver.getUser() != null) {
+			User user = driver.getUser();
+			user.setStatus(UserStatus.DELETED);
+			userRepository.save(user);
+			driver.setUser(null);
+		}
 	}
 
 	@Transactional
@@ -167,6 +181,29 @@ public class DriverService {
 		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
 		driver.deactivateConfig(configId);
 		driverRepository.save(driver);
+	}
+
+	private void validateRemunerationConfigs(List<DriverRemunerationConfig> configs) {
+		boolean hasDuplicates = configs.size() != configs.stream()
+				.map(c -> {
+					if (c instanceof FlatRateRemunerationConfig fc) {
+						return c.getType() + "_" + (fc.getFlatRateType() != null ? fc.getFlatRateType().getId() : "ALL");
+					}
+					return c.getType().name();
+				})
+				.distinct()
+				.count();
+
+		boolean hasPercentage = configs.stream().anyMatch(c -> c.getType() == RemunerationModelType.PERCENTAGE_SHARE);
+		boolean hasWeekly = configs.stream().anyMatch(c -> c.getType() == RemunerationModelType.WEEKLY_FIXED_RATE);
+
+		if (hasPercentage && hasWeekly) {
+			throw new BadRequestException("domain.driver.cannot_have_both_percentage_and_weekly");
+		}
+
+		if (hasDuplicates) {
+			throw new BadRequestException("domain.driver.multiple_configurations");
+		}
 	}
 
 	private DriverRemunerationConfig mapToRemunerationEntity(CreateRemunerationRequestDTO dto, Driver driver) {
@@ -192,5 +229,36 @@ public class DriverService {
 		Page<DriverResponseDTO> page = driverRepository.findAllByStatus(DriverStatus.ACTIVE, pageable)
 				.map(driver -> driverMapper.toDto(driver, remunerationConfigMapper));
 		return PageResponseDTO.from(page);
+	}
+
+	@Transactional
+	public CreateUserResponseDTO createDriverUser(Long driverId, String emailOverride) {
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
+
+		if (driver.getUser() != null && driver.getUser().getStatus() == UserStatus.ACTIVE) {
+			throw new ResourceConflictException("domain.driver.already_has_user");
+		}
+
+		String loginEmail = (emailOverride != null && !emailOverride.isBlank())
+				? emailOverride.trim()
+				: driver.getEmail();
+
+		return userService.createDriverUser(driver, loginEmail);
+	}
+
+	@Transactional
+	public void deactivateDriverUser(Long driverId) {
+		Driver driver = driverLookupService.validateDriverExistsOrThrow(driverId);
+
+		if (driver.getUser() == null || driver.getUser().getStatus() == UserStatus.DELETED) {
+			throw new ResourceNotFoundException("domain.driver.no_active_user");
+		}
+
+		User user = driver.getUser();
+		user.setStatus(UserStatus.DELETED);
+		userRepository.save(user);
+
+		driver.setUser(null);
+		driverRepository.save(driver);
 	}
 }

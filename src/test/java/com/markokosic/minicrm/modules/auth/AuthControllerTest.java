@@ -3,6 +3,7 @@ package com.markokosic.minicrm.modules.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.exception.ForbiddenException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
+import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
@@ -54,13 +55,15 @@ class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getMe_Success() throws Exception {
         MeResponseDTO meDTO = MeResponseDTO.builder()
                 .id(1L)
                 .firstName("Max")
                 .lastName("Mustermann")
                 .email("max@example.com")
+                .role(com.markokosic.minicrm.modules.role.dto.Roles.ADMIN)
+                .mustChangePassword(false)
                 .tenantId(10L)
                 .tenantName("TestTenant")
                 .build();
@@ -70,6 +73,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value("max@example.com"))
+                .andExpect(jsonPath("$.data.role").value("ADMIN"))
+                .andExpect(jsonPath("$.data.mustChangePassword").value(false))
                 .andExpect(jsonPath("$.data.tenantName").value("TestTenant"));
     }
 
@@ -131,11 +136,41 @@ class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void logout_Success() throws Exception {
         mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Set-Cookie"))
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void changePassword_Success() throws Exception {
+        ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("oldPass123", "newPass456");
+        UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@tenant1.com", com.markokosic.minicrm.modules.role.dto.Roles.ADMIN, false);
+        AuthResponseDTO responseDTO = new AuthResponseDTO("new-access-token", "new-refresh-token", userDTO);
+
+        when(authService.changePassword(any())).thenReturn(responseDTO);
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("max@tenant1.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void changePassword_ValidationError() throws Exception {
+        ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("", "short");
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 }

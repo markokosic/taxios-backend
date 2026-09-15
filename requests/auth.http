@@ -39,5 +39,15 @@ Cookie: accessToken={{accessToken}}
 GET {{host}}{{api}}/refresh-token
 Cookie: refreshToken={{refreshToken}}
 
-### 5. Logout
+### 5. Change Password
+POST {{host}}{{api}}/change-password
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+  "currentPassword": "securePassword123",
+  "newPassword": "newSecurePassword456"
+}
+
+### 6. Logout
 POST {{host}}{{api}}/logout

@@ -48,7 +48,7 @@ class DriverRemunerationConfigServiceTest {
         );
 
         FlatRateRemunerationConfig configEntity = new FlatRateRemunerationConfig();
-        configEntity.setFlatRateFee(new BigDecimal("50.00"));
+        configEntity.setDriverFlatRatePayoutPerShift(new BigDecimal("50.00"));
 
         when(driverLookupService.validateDriverExistsOrThrow(driverId)).thenReturn(driver);
         when(configMapper.toEntity(requestDTO, driver)).thenReturn(configEntity);

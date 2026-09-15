@@ -1,21 +1,32 @@
 package com.markokosic.minicrm.modules.user;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markokosic.minicrm.common.I18nService;
+import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
+import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.user.dto.request.CreateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.request.UpdateUserRequestDTO;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +37,9 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockBean
     private UserService userService;
 
@@ -33,7 +47,29 @@ class UserControllerTest {
     private I18nService i18n;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
+    void createUser_Success() throws Exception {
+        CreateUserRequestDTO requestDTO = new CreateUserRequestDTO(
+                "admin@example.com", "Max", "Mustermann", Roles.ADMIN
+        );
+        CreateUserResponseDTO userDTO = new CreateUserResponseDTO(1L, "Max", "Mustermann", "admin@example.com", Roles.ADMIN, true, "tempPass123");
+
+        when(userService.createUser(any(CreateUserRequestDTO.class))).thenReturn(userDTO);
+        when(i18n.getMessage("success.added")).thenReturn("Added successfully");
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("admin@example.com"))
+                .andExpect(jsonPath("$.data.roles").value("ADMIN"))
+                .andExpect(jsonPath("$.data.mustChangePassword").value(true))
+                .andExpect(jsonPath("$.data.temporaryPassword").value("tempPass123"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void getUser_Success() throws Exception {
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
         when(userService.getUserById(1L)).thenReturn(userDTO);
@@ -46,20 +82,43 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void getAllUsers_Success() throws Exception {
         UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
-        when(userService.getAllUsers()).thenReturn(List.of(userDTO));
+        PageResponseDTO<UserResponseDTO> pageResponse = new PageResponseDTO<>(
+                List.of(userDTO), 1, 20, 1L, 1, true, true
+        );
+        when(userService.getAllUsers(any())).thenReturn(pageResponse);
         when(i18n.getMessage("success.fetched")).thenReturn("Fetched successfully");
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].email").value("max@example.com"));
+                .andExpect(jsonPath("$.data.content[0].email").value("max@example.com"))
+                .andExpect(jsonPath("$.data.totalElements").value(1));
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
+    void updateUser_Success() throws Exception {
+        UpdateUserRequestDTO requestDTO = new UpdateUserRequestDTO(
+                "max@example.com", "Max", "Mustermann", Roles.ADMIN
+        );
+        UserResponseDTO userDTO = new UserResponseDTO(1L, "Max", "Mustermann", "max@example.com");
+
+        when(userService.updateUser(eq(1L), any())).thenReturn(userDTO);
+        when(i18n.getMessage("success.updated")).thenReturn("Updated successfully");
+
+        mockMvc.perform(put("/api/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("max@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteUser_Success() throws Exception {
         doNothing().when(userService).deleteUser(1L);
         when(i18n.getMessage("success.deleted")).thenReturn("Deleted successfully");

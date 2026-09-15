@@ -40,6 +40,12 @@ class OpenApiGeneratorTest {
         }
         
         // Kopiert die Datei direkt in das Frontend-Verzeichnis, falls vorhanden
+        File webDir = new File("../web");
+        if (webDir.exists()) {
+            try (FileWriter fileWriter = new FileWriter("../web/openapi.json")) {
+                fileWriter.write(openApiJson);
+            }
+        }
         File frontendDir = new File("../frontend");
         if (frontendDir.exists()) {
             try (FileWriter fileWriter = new FileWriter("../frontend/openapi.json")) {

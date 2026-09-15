@@ -27,7 +27,7 @@ class I18nServiceTest {
     @Test
     void getMessage_WithoutArgs_Success() {
         Locale currentLocale = LocaleContextHolder.getLocale();
-        when(messageSource.getMessage(eq("test.key"), any(), eq(currentLocale))).thenReturn("Test Message");
+        when(messageSource.getMessage(eq("test.key"), any(), eq("test.key"), eq(currentLocale))).thenReturn("Test Message");
 
         String message = i18nService.getMessage("test.key");
 
@@ -38,7 +38,7 @@ class I18nServiceTest {
     void getMessage_WithArgs_Success() {
         Locale currentLocale = LocaleContextHolder.getLocale();
         Object[] args = new Object[]{"Arg1"};
-        when(messageSource.getMessage(eq("test.key.args"), eq(args), eq(currentLocale))).thenReturn("Test Message Arg1");
+        when(messageSource.getMessage(eq("test.key.args"), eq(args), eq("test.key.args"), eq(currentLocale))).thenReturn("Test Message Arg1");
 
         String message = i18nService.getMessage("test.key.args", args);
 

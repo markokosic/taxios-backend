@@ -90,7 +90,7 @@ Cookie: accessToken={{accessToken}}
   "remunerationConfigs": [
     {
       "remunerationModelType": "FLAT_RATE",
-      "flatRateFee": "80.00"
+      "driverFlatRatePayoutPerShift": "80.00"
     }
   ]
 }
@@ -107,11 +107,11 @@ Cookie: accessToken={{accessToken}}
   "remunerationConfigs": [
     {
       "remunerationModelType": "FLAT_RATE",
-      "flatRateFee": "80.00"
+      "driverFlatRatePayoutPerShift": "80.00"
     },
     {
       "remunerationModelType": "FLAT_RATE",
-      "flatRateFee": "100.00"
+      "driverFlatRatePayoutPerShift": "100.00"
     }
   ]
 }
@@ -158,4 +158,12 @@ Cookie: accessToken={{accessToken}}
 ### 6. Deactivate Specific Remuneration Config
 # Replace '1' with driverId and '5' with a valid configId
 DELETE {{host}}{{api}}/1/remuneration-configs/5
+Cookie: accessToken={{accessToken}}
+
+### 7. Get My Driver Profile (Logged-in driver)
+GET {{host}}{{api}}/my
+Cookie: accessToken={{accessToken}}
+
+### 8. Get My Revenue Options (Logged-in driver for Shift entry)
+GET {{host}}{{api}}/my/revenue-options
 Cookie: accessToken={{accessToken}}

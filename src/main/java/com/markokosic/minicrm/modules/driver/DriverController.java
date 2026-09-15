@@ -4,11 +4,13 @@ import com.markokosic.minicrm.common.I18nService;
 import com.markokosic.minicrm.common.dto.response.ApiResponseDTO;
 import com.markokosic.minicrm.common.dto.response.PageResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverRequestDTO;
+import com.markokosic.minicrm.modules.driver.dto.request.CreateDriverUserRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.request.UpdateDriverRequestDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverResponseDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverRevenueOptionDTO;
 import com.markokosic.minicrm.modules.driver.dto.response.DriverSelectDTO;
 import com.markokosic.minicrm.modules.driver.service.DriverService;
+import com.markokosic.minicrm.modules.user.dto.response.CreateUserResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,6 +27,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,11 +44,38 @@ public class DriverController {
 	private final DriverService driverService;
 	private final I18nService i18n;
 
+	@GetMapping("/my")
+	@Operation(summary = "Get my driver profile", description = "Retrieves profile and remuneration configurations for the currently authenticated driver.")
+	@ApiResponse(responseCode = "200", description = "Driver profile fetched successfully")
+	@ApiResponse(responseCode = "404", description = "Driver not found for current user", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<DriverResponseDTO>> getMyDriverProfile(
+			@AuthenticationPrincipal UserPrincipal principal
+	) {
+		DriverResponseDTO driver = driverService.getMyDriverProfile(principal.getId());
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, driver, i18n.getMessage("success.fetched")));
+	}
+
+	@GetMapping("/my/revenue-options")
+	@Operation(summary = "Get my selectable revenue options", description = "Fetches the list of selectable revenue categories and flat rate options for the currently authenticated driver.")
+	@ApiResponse(responseCode = "200", description = "Revenue options fetched successfully")
+	@ApiResponse(responseCode = "404", description = "Driver not found for current user", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).DRIVER.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<List<DriverRevenueOptionDTO>>> getMyRevenueOptions(
+			@AuthenticationPrincipal UserPrincipal principal
+	) {
+		List<DriverRevenueOptionDTO> options = driverService.getMyRevenueOptions(principal.getId());
+		return ResponseEntity.ok(new ApiResponseDTO<>(true, options, i18n.getMessage("success.fetched")));
+	}
+
 	@PostMapping
 	@Operation(summary = "Create a new driver", description = "Registers a new driver and sets up their initial profile.")
 	@ApiResponse(responseCode = "201", description = "Driver profile created successfully")
 	@ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<DriverResponseDTO>> createDriver(@Valid @RequestBody CreateDriverRequestDTO request){
 		DriverResponseDTO newDriver = driverService.createDriver(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, newDriver, i18n.getMessage("success.created")));};
@@ -53,6 +85,7 @@ public class DriverController {
 	@ApiResponse(responseCode = "200", description = "Driver details fetched successfully")
 	@ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<DriverResponseDTO>> getDriver(@PathVariable Long id){
 		DriverResponseDTO driver = driverService.getDriverById(id);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, driver, i18n.getMessage("success.fetched")));
@@ -61,6 +94,7 @@ public class DriverController {
 	@GetMapping("/{id}/revenue-options")
 	@Operation(summary = "Get selectable revenue options for driver", description = "Fetches the list of selectable revenue categories and flat rate options for a driver.")
 	@ApiResponse(responseCode = "200", description = "Revenue options fetched successfully")
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<List<DriverRevenueOptionDTO>>> getDriverRevenueOptions(@PathVariable Long id) {
 		List<DriverRevenueOptionDTO> options = driverService.getRevenueOptionsForDriver(id);
 		return ResponseEntity.ok(new ApiResponseDTO<>(true, options, i18n.getMessage("success.fetched")));
@@ -70,6 +104,7 @@ public class DriverController {
 	@Operation(summary = "Get drivers list for dropdowns", description = "Retrieves a simplified list of drivers optimized for selection controls.")
 	@ApiResponse(responseCode = "200", description = "Drivers list retrieved successfully")
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<List<DriverSelectDTO>>> getAllDriversForSelect() {
 		List<DriverSelectDTO> drivers = driverService.getAllDriversForSelect();
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, drivers, i18n.getMessage("success.fetched")));
@@ -80,6 +115,7 @@ public class DriverController {
 	@Operation(summary = "Get all drivers", description = "Retrieves a paginated list of all drivers for the current tenant.")
 	@ApiResponse(responseCode = "200", description = "Drivers list retrieved successfully")
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<PageResponseDTO<DriverResponseDTO>>> getAllDrivers(@ParameterObject @PageableDefault(sort={"lastName", "id"}, direction = Sort.Direction.ASC) Pageable pageable){
 		PageResponseDTO<DriverResponseDTO> drivers = driverService.getAllDrivers(pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<>(true, drivers, i18n.getMessage("success.fetched")));
@@ -91,6 +127,7 @@ public class DriverController {
 	@ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<ApiResponseDTO<DriverResponseDTO>> updateDriver(
 			@PathVariable Long id,
 			@RequestBody @Valid UpdateDriverRequestDTO request
@@ -104,6 +141,7 @@ public class DriverController {
 	@ApiResponse(responseCode = "204", description = "Driver deleted successfully")
 	@ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<Void> deleteDriver(
 			@PathVariable Long id
 	) {
@@ -116,6 +154,7 @@ public class DriverController {
 	@ApiResponse(responseCode = "204", description = "Remuneration configuration stopped successfully")
 	@ApiResponse(responseCode = "404", description = "Driver or configuration not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
 	public ResponseEntity<Void> stopRemunerationConfig(
 			@PathVariable Long id,
 			@PathVariable Long configId
@@ -123,6 +162,33 @@ public class DriverController {
 		driverService.stopRemunerationConfig(id, configId);
 		return ResponseEntity.noContent().build();
 	}
-}
 
-//@PostMapping(/{id}/remuneration-configs)
+	@PostMapping(value = "/{id}/user", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Create user account for driver", description = "Creates a login user account with ROLE_DRIVER and a temporary password, linked directly to this driver. If no email is supplied in the request body, the driver's contact email is used.")
+	@ApiResponse(responseCode = "201", description = "Driver user account created successfully")
+	@ApiResponse(responseCode = "400", description = "Invalid request payload", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "404", description = "Driver not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "409", description = "Driver already has a user account or email duplicate", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<ApiResponseDTO<CreateUserResponseDTO>> createDriverUser(
+			@PathVariable Long id,
+			@RequestBody(required = false) @Valid CreateDriverUserRequestDTO request
+	) {
+		String loginEmail = (request != null && request.email() != null && !request.email().isBlank())
+				? request.email().trim()
+				: null;
+
+		CreateUserResponseDTO response = driverService.createDriverUser(id, loginEmail);
+		return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponseDTO<>(true, response, i18n.getMessage("success.created")));
+	}
+
+	@DeleteMapping("/{id}/user")
+	@Operation(summary = "Deactivate driver user account", description = "Deactivates and removes the login user account linked to this driver while keeping the driver profile intact.")
+	@ApiResponse(responseCode = "204", description = "Driver user account deactivated successfully")
+	@ApiResponse(responseCode = "404", description = "Driver not found or has no active user account", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+	@PreAuthorize("hasAnyRole(T(com.markokosic.minicrm.modules.role.dto.Roles).ADMIN.name(), T(com.markokosic.minicrm.modules.role.dto.Roles).OWNER.name())")
+	public ResponseEntity<Void> deactivateDriverUser(@PathVariable Long id) {
+		driverService.deactivateDriverUser(id);
+		return ResponseEntity.noContent().build();
+	}
+}

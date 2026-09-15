@@ -5,9 +5,8 @@ import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationReque
 import com.markokosic.minicrm.modules.remuneration.FlatRateRemunerationCalculator;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,12 +16,18 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
+@Table(name = "remuneration_flat_rate_configs")
+@PrimaryKeyJoinColumn(name = "id")
 @DiscriminatorValue("FLAT_RATE")
 public class FlatRateRemunerationConfig extends DriverRemunerationConfig {
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "flat_rate_type_id")
+	private FlatRateType flatRateType;
+
 	@DecimalMin(value = "0.0", message = "{driver.minDriverPayout.negative}")
-	@Column(name="flat_rate_fee", precision = 19, scale = 2)
-	private BigDecimal flatRateFee;
+	@Column(name="driver_flat_rate_payout_per_shift", precision = 19, scale = 2)
+	private BigDecimal driverFlatRatePayoutPerShift;
 
 	@Override
 	public RemunerationModelType getType() {
@@ -30,12 +35,13 @@ public class FlatRateRemunerationConfig extends DriverRemunerationConfig {
 	}
 
 	@Override
-	public boolean isIdenticalTo(CreateRemunerationRequestDTO dto) {
-		if (!(dto instanceof CreateFlatRateRemunerationConfigDTO fDto)) {
+	public boolean isIdenticalTo(DriverRemunerationConfig other) {
+		if (!(other instanceof FlatRateRemunerationConfig fOther)) {
 			return false;
 		}
 		Long currentTypeId = getFlatRateType() != null ? getFlatRateType().getId() : null;
-		return areEqual(this.flatRateFee, fDto.flatRateFee()) && Objects.equals(currentTypeId, fDto.flatRateTypeId());
+		Long otherTypeId = fOther.getFlatRateType() != null ? fOther.getFlatRateType().getId() : null;
+		return areEqual(this.driverFlatRatePayoutPerShift, fOther.driverFlatRatePayoutPerShift) && Objects.equals(currentTypeId, otherTypeId);
 	}
 
 	@Override
