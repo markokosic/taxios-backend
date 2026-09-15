@@ -1,6 +1,8 @@
 package com.markokosic.minicrm.modules.auth.model;
 
+import com.markokosic.minicrm.modules.role.dto.Roles;
 import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.user.model.UserStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,7 +20,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("USER"));
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRoles().name()));
     }
 
 
@@ -59,7 +61,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-//        return UserDetails.super.isEnabled();
-        return true;
+        return  user.getStatus().equals(UserStatus.ACTIVE);
     }
 }

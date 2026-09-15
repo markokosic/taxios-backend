@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 11-add-status-to-users
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: users
+              columnName: status
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false

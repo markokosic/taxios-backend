@@ -13,7 +13,7 @@ import com.markokosic.minicrm.modules.driver.model.DriverRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.PercentageShareRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.WeeklyFixedRateRemunerationConfig;
 import com.markokosic.minicrm.modules.driver.model.FlatRateRemunerationConfig;
-import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -36,6 +36,8 @@ public interface RemunerationConfigMapper {
 	}
 
 	default RemunerationConfigResponseDTO toResponseDto(DriverRemunerationConfig entity) {
+		if (entity == null) return null;
+		entity = (DriverRemunerationConfig) org.hibernate.Hibernate.unproxy(entity);
 		if (entity instanceof PercentageShareRemunerationConfig percentage) {
 			return toPercentageShareResponseDto(percentage);
 		} else if (entity instanceof WeeklyFixedRateRemunerationConfig weekly) {
@@ -51,9 +53,8 @@ public interface RemunerationConfigMapper {
 	@Mapping(target = "current", ignore = true)
 	@Mapping(target = "validFrom", ignore = true)
 	@Mapping(target = "validUntil", ignore = true)
-	@Mapping(target = "flatRateType", ignore = true)
 	@Mapping(target = "driverRevenueSharePercentage", source = "driverRevenueSharePercentage")
-	@Mapping(target = "minDriverPayout", source = "minDriverPayout")
+	@Mapping(target = "minDriverPayoutPerShift", source = "minDriverPayoutPerShift")
 	PercentageShareRemunerationConfig toPercentageShareEntity(
 			CreatePercentageShareRemunerationConfigDTO dto,
 			@Context Driver driver
@@ -64,7 +65,6 @@ public interface RemunerationConfigMapper {
 	@Mapping(target = "current", ignore = true)
 	@Mapping(target = "validFrom", ignore = true)
 	@Mapping(target = "validUntil", ignore = true)
-	@Mapping(target = "flatRateType", ignore = true)
 	@Mapping(target = "weeklyFixedCompanySettlement", source = "weeklyFixedCompanySettlement")
 	WeeklyFixedRateRemunerationConfig toWeeklyFixedEntity(
 			CreateWeeklyFixedRemunerationConfigDTO dto,
@@ -76,7 +76,7 @@ public interface RemunerationConfigMapper {
 	@Mapping(target = "current", ignore = true)
 	@Mapping(target = "validFrom", ignore = true)
 	@Mapping(target = "validUntil", ignore = true)
-	@Mapping(target = "flatRateFee", source = "dto.flatRateFee")
+	@Mapping(target = "driverFlatRatePayoutPerShift", source = "dto.driverFlatRatePayoutPerShift")
 	@Mapping(target = "flatRateType", source = "flatRateType")
 	FlatRateRemunerationConfig toFlatRateEntity(
 			CreateFlatRateRemunerationConfigDTO dto,
@@ -93,5 +93,7 @@ public interface RemunerationConfigMapper {
 	@Mapping(target = "remunerationModelType", source = "type")
 	@Mapping(source = "flatRateType.id", target = "flatRateTypeId")
 	@Mapping(source = "flatRateType.name", target = "flatRateTypeName")
+	@Mapping(source = "flatRateType.flatRateCode", target = "flatRateCode")
+	@Mapping(source = "flatRateType.defaultPrice", target = "defaultPrice")
 	FlatRateRemunerationResponseDTO toFlatRateResponseDto(FlatRateRemunerationConfig entity);
 }

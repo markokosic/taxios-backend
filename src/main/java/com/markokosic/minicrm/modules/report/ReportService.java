@@ -1,9 +1,9 @@
 package com.markokosic.minicrm.modules.report;
 
 import com.markokosic.minicrm.modules.driver.model.Driver;
-import com.markokosic.minicrm.modules.shift.Shift;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntry;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryRepository;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftSettlement;
+import com.markokosic.minicrm.modules.shift.repository.ShiftSettlementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReportService {
 
-    private final ShiftRevenueEntryRepository shiftRevenueEntryRepository;
+    private final ShiftSettlementRepository shiftSettlementRepository;
 
     @Transactional(readOnly = true)
     public DashboardReportDTO generateDashboardReport(int year, Integer month) {
@@ -42,17 +42,17 @@ public class ReportService {
             toDateTime = LocalDate.of(year, 12, 31).atTime(LocalTime.MAX);
         }
 
-        List<ShiftRevenueEntry> entries = shiftRevenueEntryRepository.findRevenuesForReport(fromDateTime, toDateTime, null);
+        List<ShiftSettlement> settlements = shiftSettlementRepository.findSettlementsForReport(fromDateTime, toDateTime, null);
 
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal totalCompany = BigDecimal.ZERO;
         BigDecimal totalDriver = BigDecimal.ZERO;
-        long entryCount = entries.size();
+        long entryCount = settlements.size();
 
-        for (ShiftRevenueEntry entry : entries) {
-            totalRevenue = totalRevenue.add(entry.getRevenue());
-            totalCompany = totalCompany.add(entry.getCompanyRemuneration());
-            totalDriver = totalDriver.add(entry.getDriverRemuneration());
+        for (ShiftSettlement s : settlements) {
+            totalRevenue = totalRevenue.add(s.getTotalRevenue() != null ? s.getTotalRevenue() : BigDecimal.ZERO);
+            totalCompany = totalCompany.add(s.getCompanyRemuneration() != null ? s.getCompanyRemuneration() : BigDecimal.ZERO);
+            totalDriver = totalDriver.add(s.getDriverRemuneration() != null ? s.getDriverRemuneration() : BigDecimal.ZERO);
         }
 
         return new DashboardReportDTO(
@@ -76,14 +76,14 @@ public class ReportService {
         LocalDateTime fromDateTime = dateFrom.atStartOfDay();
         LocalDateTime toDateTime = dateTo.atTime(LocalTime.MAX);
 
-        List<ShiftRevenueEntry> entries = shiftRevenueEntryRepository.findRevenuesForReport(fromDateTime, toDateTime, driverId);
+        List<ShiftSettlement> settlements = shiftSettlementRepository.findSettlementsForReport(fromDateTime, toDateTime, driverId);
 
         List<RevenueReportEntryDTO> rows;
 
         if (effectiveGroupBy == GroupBy.NONE) {
-            rows = entries.stream()
-                    .map(entry -> {
-                        Shift shift = entry.getShift();
+            rows = settlements.stream()
+                    .map(settlement -> {
+                        Shift shift = settlement.getShift();
                         Driver driver = shift != null ? shift.getDriver() : null;
                         List<DriverInfoDTO> drivers = driver != null
                                 ? List.of(new DriverInfoDTO(driver.getId(), driver.getFirstName(), driver.getLastName()))
@@ -95,19 +95,19 @@ public class ReportService {
                         return new RevenueReportEntryDTO(
                                 rowDate,
                                 shift != null ? shift.getId() : null,
-                                entry.getId(),
-                                entry.getEntryCategory(),
-                                entry.getRevenue(),
-                                entry.getCompanyRemuneration(),
-                                entry.getDriverRemuneration(),
+                                settlement.getId(),
+                                null,
+                                settlement.getTotalRevenue() != null ? settlement.getTotalRevenue() : BigDecimal.ZERO,
+                                settlement.getCompanyRemuneration() != null ? settlement.getCompanyRemuneration() : BigDecimal.ZERO,
+                                settlement.getDriverRemuneration() != null ? settlement.getDriverRemuneration() : BigDecimal.ZERO,
                                 1L,
                                 drivers
                         );
                     })
                     .collect(Collectors.toList());
         } else {
-            Function<ShiftRevenueEntry, Object> keyExtractor = entry -> {
-                Shift shift = entry.getShift();
+            Function<ShiftSettlement, Object> keyExtractor = settlement -> {
+                Shift shift = settlement.getShift();
                 LocalDate shiftDate = (shift != null && shift.getShiftStart() != null)
                         ? shift.getShiftStart().toLocalDate()
                         : LocalDate.MIN;
@@ -122,13 +122,13 @@ public class ReportService {
                 };
             };
 
-            Map<Object, List<ShiftRevenueEntry>> grouped = entries.stream()
+            Map<Object, List<ShiftSettlement>> grouped = settlements.stream()
                     .collect(Collectors.groupingBy(keyExtractor, LinkedHashMap::new, Collectors.toList()));
 
             rows = grouped.entrySet().stream()
                     .map(groupEntry -> {
                         Object key = groupEntry.getKey();
-                        List<ShiftRevenueEntry> list = groupEntry.getValue();
+                        List<ShiftSettlement> list = groupEntry.getValue();
 
                         LocalDate rowDate = null;
                         if (key instanceof LocalDate) {
@@ -140,13 +140,13 @@ public class ReportService {
                         BigDecimal totalDriver = BigDecimal.ZERO;
                         Set<DriverInfoDTO> driversSet = new LinkedHashSet<>();
 
-                        for (ShiftRevenueEntry entry : list) {
-                            totalRevenue = totalRevenue.add(entry.getRevenue());
-                            totalCompany = totalCompany.add(entry.getCompanyRemuneration());
-                            totalDriver = totalDriver.add(entry.getDriverRemuneration());
+                        for (ShiftSettlement settlement : list) {
+                            totalRevenue = totalRevenue.add(settlement.getTotalRevenue() != null ? settlement.getTotalRevenue() : BigDecimal.ZERO);
+                            totalCompany = totalCompany.add(settlement.getCompanyRemuneration() != null ? settlement.getCompanyRemuneration() : BigDecimal.ZERO);
+                            totalDriver = totalDriver.add(settlement.getDriverRemuneration() != null ? settlement.getDriverRemuneration() : BigDecimal.ZERO);
 
-                            if (entry.getShift() != null && entry.getShift().getDriver() != null) {
-                                Driver driver = entry.getShift().getDriver();
+                            if (settlement.getShift() != null && settlement.getShift().getDriver() != null) {
+                                Driver driver = settlement.getShift().getDriver();
                                 driversSet.add(new DriverInfoDTO(
                                         driver.getId(),
                                         driver.getFirstName(),

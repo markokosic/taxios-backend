@@ -1,0 +1,260 @@
+databaseChangeLog:
+  - changeSet:
+      id: 13-create-remuneration-percentage-configs-table
+      author: mkosic
+      validCheckSum: ANY
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: remuneration_percentage_configs
+      changes:
+        - createTable:
+            tableName: remuneration_percentage_configs
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_remuneration_percentage_configs
+                    nullable: false
+              - column:
+                  name: driver_revenue_share_percentage
+                  type: numeric(5, 4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: min_driver_payout
+                  type: numeric(19, 2)
+        - addForeignKeyConstraint:
+            baseTableName: remuneration_percentage_configs
+            baseColumnNames: id
+            referencedTableName: driver_remuneration_configs
+            referencedColumnNames: id
+            constraintName: fk_remun_percentage_base
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 13-create-remuneration-flat-rate-configs-table
+      author: mkosic
+      validCheckSum: ANY
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: remuneration_flat_rate_configs
+      changes:
+        - createTable:
+            tableName: remuneration_flat_rate_configs
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_remuneration_flat_rate_configs
+                    nullable: false
+              - column:
+                  name: flat_rate_type_id
+                  type: BIGINT
+              - column:
+                  name: driver_flat_rate_payout_per_shift
+                  type: numeric(19, 2)
+        - addForeignKeyConstraint:
+            baseTableName: remuneration_flat_rate_configs
+            baseColumnNames: id
+            referencedTableName: driver_remuneration_configs
+            referencedColumnNames: id
+            constraintName: fk_remun_flat_rate_base
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: remuneration_flat_rate_configs
+            baseColumnNames: flat_rate_type_id
+            referencedTableName: flat_rate_types
+            referencedColumnNames: id
+            constraintName: fk_remun_flat_rate_type
+            onDelete: RESTRICT
+
+  - changeSet:
+      id: 13-create-remuneration-weekly-rent-configs-table
+      author: mkosic
+      validCheckSum: ANY
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: remuneration_weekly_rent_configs
+      changes:
+        - createTable:
+            tableName: remuneration_weekly_rent_configs
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_remuneration_weekly_rent_configs
+                    nullable: false
+              - column:
+                  name: weekly_company_settlement
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: settlement_day
+                  type: INTEGER
+        - addForeignKeyConstraint:
+            baseTableName: remuneration_weekly_rent_configs
+            baseColumnNames: id
+            referencedTableName: driver_remuneration_configs
+            referencedColumnNames: id
+            constraintName: fk_remun_weekly_rent_base
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 13-migrate-remuneration-configs-data
+      author: mkosic
+      validCheckSum: ANY
+      changes:
+        - sql:
+            sql: "INSERT INTO remuneration_percentage_configs (id, driver_revenue_share_percentage, min_driver_payout) SELECT id, CASE WHEN driver_revenue_share_percentage > 1 THEN driver_revenue_share_percentage / 100.0 ELSE COALESCE(driver_revenue_share_percentage, 0) END, driver_min_payout FROM driver_remuneration_configs WHERE config_type = 'PERCENTAGE_SHARE' AND NOT EXISTS (SELECT 1 FROM remuneration_percentage_configs rpc WHERE rpc.id = driver_remuneration_configs.id);"
+        - sql:
+            sql: "UPDATE remuneration_percentage_configs SET driver_revenue_share_percentage = driver_revenue_share_percentage / 100.0 WHERE driver_revenue_share_percentage > 1.0;"
+        - sql:
+            sql: "INSERT INTO remuneration_flat_rate_configs (id, flat_rate_type_id, driver_flat_rate_payout_per_shift) SELECT id, flat_rate_type_id, driver_flat_rate_payout_per_shift FROM driver_remuneration_configs WHERE config_type = 'FLAT_RATE' AND NOT EXISTS (SELECT 1 FROM remuneration_flat_rate_configs rfc WHERE rfc.id = driver_remuneration_configs.id);"
+        - sql:
+            sql: "INSERT INTO remuneration_weekly_rent_configs (id, weekly_company_settlement, settlement_day) SELECT id, COALESCE(weekly_company_settlement, 0), settlement_day FROM driver_remuneration_configs WHERE config_type = 'WEEKLY_FIXED_RATE' AND NOT EXISTS (SELECT 1 FROM remuneration_weekly_rent_configs rwc WHERE rwc.id = driver_remuneration_configs.id);"
+
+  - changeSet:
+      id: 13-create-shift-settlements-table
+      author: mkosic
+      validCheckSum: ANY
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: shift_settlements
+      changes:
+        - createTable:
+            tableName: shift_settlements
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_shift_settlements
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shift_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_shift_settlements_shift_id
+              - column:
+                  name: remuneration_version_id
+                  type: BIGINT
+              - column:
+                  name: total_revenue
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: driver_remuneration
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: company_remuneration
+                  type: numeric(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: settled_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: shift_settlements
+            baseColumnNames: tenant_id
+            referencedTableName: tenants
+            referencedColumnNames: id
+            constraintName: fk_shift_settlements_tenant
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: shift_settlements
+            baseColumnNames: shift_id
+            referencedTableName: shifts
+            referencedColumnNames: id
+            constraintName: fk_shift_settlements_shift
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: shift_settlements
+            baseColumnNames: remuneration_version_id
+            referencedTableName: driver_remuneration_configs
+            referencedColumnNames: id
+            constraintName: fk_shift_settlements_remuneration
+            onDelete: RESTRICT
+        - createIndex:
+            tableName: shift_settlements
+            indexName: idx_shift_settlements_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            tableName: shift_settlements
+            indexName: idx_shift_settlements_shift_id
+            columns:
+              - column:
+                  name: shift_id
+
+  - changeSet:
+      id: 13-migrate-existing-shifts-to-settlements
+      author: mkosic
+      validCheckSum: ANY
+      changes:
+        - sql:
+            sql: "INSERT INTO shift_settlements (tenant_id, shift_id, remuneration_version_id, total_revenue, driver_remuneration, company_remuneration, settled_at) SELECT s.tenant_id, s.id, MAX(e.remuneration_version_id), COALESCE(SUM(e.revenue), 0), COALESCE(SUM(e.driver_remuneration), 0), COALESCE(SUM(e.company_remuneration), 0), NOW() FROM shifts s LEFT JOIN shift_revenue_entries e ON s.id = e.shift_id WHERE NOT EXISTS (SELECT 1 FROM shift_settlements ss WHERE ss.shift_id = s.id) GROUP BY s.id, s.tenant_id;"
+
+  - changeSet:
+      id: 13-sanitize-shift-status-enum-values
+      author: mkosic
+      validCheckSum: ANY
+      changes:
+        - sql:
+            sql: "UPDATE shifts SET status = 'APPROVED' WHERE status = 'ACTIVE' OR status NOT IN ('PENDING', 'APPROVED', 'REJECTED');"
+
+  - changeSet:
+      id: 13-drop-old-columns-from-driver-remuneration-configs
+      author: mkosic
+      validCheckSum: ANY
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: driver_remuneration_configs
+            constraintName: fk_driver_remuneration_configs_flat_rate_type
+        - dropColumn:
+            tableName: driver_remuneration_configs
+            columnName: driver_revenue_share_percentage
+        - dropColumn:
+            tableName: driver_remuneration_configs
+            columnName: driver_min_payout
+        - dropColumn:
+            tableName: driver_remuneration_configs
+            columnName: weekly_company_settlement
+        - dropColumn:
+            tableName: driver_remuneration_configs
+            columnName: settlement_day
+        - dropColumn:
+            tableName: driver_remuneration_configs
+            columnName: flat_rate_type_id
+        - dropColumn:
+            tableName: driver_remuneration_configs
+            columnName: driver_flat_rate_payout_per_shift

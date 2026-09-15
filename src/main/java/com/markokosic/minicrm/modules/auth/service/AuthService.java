@@ -1,24 +1,26 @@
 package com.markokosic.minicrm.modules.auth.service;
 
-
+import com.markokosic.minicrm.exception.BadRequestException;
 import com.markokosic.minicrm.exception.ResourceConflictException;
+import com.markokosic.minicrm.exception.UnauthorizedException;
 import com.markokosic.minicrm.modules.auth.config.TokenProperties;
+import com.markokosic.minicrm.modules.auth.dto.request.ChangePasswordRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.LoginRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.request.RegisterTenantRequestDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.AuthResponseDTO;
-import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.auth.dto.response.MeResponseDTO;
-import com.markokosic.minicrm.modules.user.UserMapper;
-import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
-import com.markokosic.minicrm.modules.tenant.Tenant;
-import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.auth.dto.response.RegisterTenantResponseDTO;
 import com.markokosic.minicrm.modules.auth.model.UserPrincipal;
+import com.markokosic.minicrm.modules.role.dto.Roles;
+import com.markokosic.minicrm.modules.tenant.Tenant;
 import com.markokosic.minicrm.modules.tenant.TenantRepository;
+import com.markokosic.minicrm.modules.user.User;
+import com.markokosic.minicrm.modules.user.UserMapper;
 import com.markokosic.minicrm.modules.user.UserRepository;
-import com.markokosic.minicrm.exception.UnauthorizedException;
+import com.markokosic.minicrm.modules.user.UserService;
+import com.markokosic.minicrm.modules.user.dto.response.UserResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,50 +38,32 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final ApplicationContext applicationContext;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
     private final JWTService jwtService;
     private final AuthenticationManager authenticationManager;
     private final TokenProperties tokenProperties;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public RegisterTenantResponseDTO registerNewTenant(RegisterTenantRequestDTO userAndTenantDto) {
         Tenant savedTenant = createTenant(userAndTenantDto.getTenantName());
-        createUser(userAndTenantDto, savedTenant);
+        userService.createTenantOwner(userAndTenantDto, savedTenant.getId());
 
         return new RegisterTenantResponseDTO(savedTenant.getId(), savedTenant.getName());
     }
 
-    public Tenant createTenant (String name) {
-
-        if(tenantRepository.existsByName(name)){
+    public Tenant createTenant(String name) {
+        if (tenantRepository.existsByName(name)) {
             throw new ResourceConflictException("domain.tenant.name.duplicate");
         }
 
         Tenant tenant = new Tenant();
         tenant.setName(name);
-         return tenantRepository.save(tenant);
+        return tenantRepository.save(tenant);
     }
-
-    public void createUser (RegisterTenantRequestDTO request, Tenant tenant) {
-        if(userRepository.existsByEmail(request.getEmail())){
-            throw new ResourceConflictException("domain.user.email.duplicate");
-        }
-
-        userRepository.insertUser(
-            request.getEmail(),
-            request.getFirstName(),
-            request.getLastName(),
-            passwordEncoder.encode(request.getPassword()),
-            tenant.getId()
-        );
-    }
-
-
-
 
     public AuthResponseDTO login(LoginRequestDTO loginRequest) {
         Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail());
@@ -91,22 +75,23 @@ public class AuthService {
         User user = optionalUser.get();
 
         try {
-             authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
 
-            String accessToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), tokenProperties.getAccess().getExpirationMinutes());
-            String refreshToken = jwtService.generateToken(loginRequest.getEmail(), user.getTenantId(), tokenProperties.getRefresh().getExpirationMinutes());
-            UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
+            String accessToken = jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+            String refreshToken = user.isMustChangePassword()
+                    ? ""
+                    : jwtService.generateToken(user.getId(), loginRequest.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+
+            UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), user.isMustChangePassword());
 
             return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
 
         } catch (AuthenticationException ex) {
             throw new UnauthorizedException("auth.invalid_credentials");
-
         }
     }
-
 
     public MeResponseDTO getMe() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -124,27 +109,63 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
+                .role(user.getRoles())
+                .mustChangePassword(user.isMustChangePassword())
                 .tenantId(user.getTenantId())
                 .tenantName(tenantName)
                 .build();
     }
 
-    public String refreshAccessToken(String refreshToken){
-        //1. checkk if refreshToken is received
-        if(refreshToken.isEmpty()){
+    public String refreshAccessToken(String refreshToken) {
+        //1. check if refreshToken is received
+        if (refreshToken.isEmpty()) {
             throw new UnauthorizedException("auth.token.no-token-received");
         }
 
         //2 validate refresh token, if not valid return UNAUTH, please login again
         boolean isSignedAndValid = jwtService.validateRefreshToken(refreshToken);
-        if(!isSignedAndValid){
+        if (!isSignedAndValid) {
             throw new UnauthorizedException("auth.token.expired");
-        };
+        }
 
         String username = jwtService.extractEmail(refreshToken);
         Long tenantId = jwtService.extractTenantId(refreshToken);
-        return jwtService.generateToken(username, tenantId, tokenProperties.getAccess().getExpirationMinutes());
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
 
+        if (user.isMustChangePassword()) {
+            throw new UnauthorizedException("auth.token.expired");
+        }
+
+        return jwtService.generateToken(user.getId(), username, tenantId, user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
     }
 
+    @Transactional
+    public AuthResponseDTO changePassword(ChangePasswordRequestDTO request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
+            throw new UnauthorizedException("auth.invalid_credentials");
+        }
+
+        User user = userRepository.findByEmail(principal.getEmail())
+                .orElseThrow(() -> new UnauthorizedException("auth.invalid_credentials"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new BadRequestException("auth.password.current_invalid");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new BadRequestException("auth.password.same_as_old");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setMustChangePassword(false);
+        user = userRepository.save(user);
+
+        String accessToken = jwtService.generateToken(user.getId(), user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getAccess().getExpirationMinutes());
+        String refreshToken = jwtService.generateToken(user.getId(), user.getEmail(), user.getTenantId(), user.getRoles(), tokenProperties.getRefresh().getExpirationMinutes());
+        UserResponseDTO userResponseDTO = new UserResponseDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRoles(), false);
+
+        return new AuthResponseDTO(accessToken, refreshToken, userResponseDTO);
+    }
 }

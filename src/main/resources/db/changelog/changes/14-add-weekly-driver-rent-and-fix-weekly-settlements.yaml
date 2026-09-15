@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 14-add-weekly-driver-rent-column
+      author: mkosic
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: shift_revenue_entries
+              columnName: weekly_driver_rent
+      changes:
+        - addColumn:
+            tableName: shift_revenue_entries
+            columns:
+              - column:
+                  name: weekly_driver_rent
+                  type: numeric(19, 2)
+
+  - changeSet:
+      id: 14-fix-existing-weekly-revenues-and-settlements
+      author: mkosic
+      changes:
+        - sql:
+            comment: "Set weekly_driver_rent to revenue and fix company/driver remuneration for WEEKLY entries"
+            sql: |
+              UPDATE shift_revenue_entries
+              SET weekly_driver_rent = COALESCE(revenue, 0),
+                  company_remuneration = COALESCE(revenue, 0),
+                  driver_remuneration = 0
+              WHERE entry_category = 'WEEKLY';
+
+              UPDATE shift_settlements ss
+              SET company_remuneration = COALESCE((SELECT SUM(sre.company_remuneration) FROM shift_revenue_entries sre WHERE sre.shift_id = ss.shift_id), 0),
+                  driver_remuneration = COALESCE((SELECT SUM(sre.driver_remuneration) FROM shift_revenue_entries sre WHERE sre.shift_id = ss.shift_id), 0),
+                  total_revenue = COALESCE((SELECT SUM(sre.revenue) FROM shift_revenue_entries sre WHERE sre.shift_id = ss.shift_id), 0);

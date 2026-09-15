@@ -3,7 +3,7 @@ package com.markokosic.minicrm.modules.driver.model;
 import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationRequestDTO;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import com.markokosic.minicrm.modules.shift.FlatRateType;
+import com.markokosic.minicrm.modules.flatratetype.model.FlatRateType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Table(name="driver_remuneration_configs")
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "config_type", discriminatorType = DiscriminatorType.STRING)
 public abstract class DriverRemunerationConfig {
 
@@ -41,13 +41,9 @@ public abstract class DriverRemunerationConfig {
 	@Column(name = "valid_until")
 	private LocalDate validUntil;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "flat_rate_type_id")
-	private FlatRateType flatRateType;
-
 	public abstract RemunerationModelType getType();
 
-	public abstract boolean isIdenticalTo(CreateRemunerationRequestDTO dto);
+	public abstract boolean isIdenticalTo(DriverRemunerationConfig other);
 
 	public abstract RemunerationSplit calculateRemuneration(BigDecimal revenue);
 

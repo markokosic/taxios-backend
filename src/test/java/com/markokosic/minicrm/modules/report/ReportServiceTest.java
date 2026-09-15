@@ -2,10 +2,9 @@ package com.markokosic.minicrm.modules.report;
 
 import com.markokosic.minicrm.modules.car.model.Car;
 import com.markokosic.minicrm.modules.driver.model.Driver;
-import com.markokosic.minicrm.modules.shift.Shift;
-import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntry;
-import com.markokosic.minicrm.modules.shift.ShiftRevenueEntryRepository;
+import com.markokosic.minicrm.modules.shift.model.Shift;
+import com.markokosic.minicrm.modules.shift.model.ShiftSettlement;
+import com.markokosic.minicrm.modules.shift.repository.ShiftSettlementRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.when;
 class ReportServiceTest {
 
     @Mock
-    private ShiftRevenueEntryRepository shiftRevenueEntryRepository;
+    private ShiftSettlementRepository shiftSettlementRepository;
 
     @InjectMocks
     private ReportService reportService;
@@ -35,8 +34,8 @@ class ReportServiceTest {
     private Car car1;
     private Shift shift1;
     private Shift shift2;
-    private ShiftRevenueEntry revenueEntry1;
-    private ShiftRevenueEntry revenueEntry2;
+    private ShiftSettlement settlement1;
+    private ShiftSettlement settlement2;
 
     @BeforeEach
     void setUp() {
@@ -62,27 +61,27 @@ class ReportServiceTest {
         shift2.setShiftStart(LocalDateTime.of(2025, 5, 15, 8, 0));
         shift2.setShiftEnd(LocalDateTime.of(2025, 5, 15, 16, 0));
 
-        revenueEntry1 = new ShiftRevenueEntry();
-        revenueEntry1.setId(100L);
-        revenueEntry1.setShift(shift1);
-        revenueEntry1.setEntryCategory(ShiftEntryCategory.REGULAR);
-        revenueEntry1.setRevenue(new BigDecimal("200.00"));
-        revenueEntry1.setCompanyRemuneration(new BigDecimal("80.00"));
-        revenueEntry1.setDriverRemuneration(new BigDecimal("120.00"));
+        settlement1 = ShiftSettlement.builder()
+                .id(100L)
+                .shift(shift1)
+                .totalRevenue(new BigDecimal("200.00"))
+                .companyRemuneration(new BigDecimal("80.00"))
+                .driverRemuneration(new BigDecimal("120.00"))
+                .build();
 
-        revenueEntry2 = new ShiftRevenueEntry();
-        revenueEntry2.setId(101L);
-        revenueEntry2.setShift(shift2);
-        revenueEntry2.setEntryCategory(ShiftEntryCategory.FLAT_RATE);
-        revenueEntry2.setRevenue(new BigDecimal("300.00"));
-        revenueEntry2.setCompanyRemuneration(new BigDecimal("120.00"));
-        revenueEntry2.setDriverRemuneration(new BigDecimal("180.00"));
+        settlement2 = ShiftSettlement.builder()
+                .id(101L)
+                .shift(shift2)
+                .totalRevenue(new BigDecimal("300.00"))
+                .companyRemuneration(new BigDecimal("120.00"))
+                .driverRemuneration(new BigDecimal("180.00"))
+                .build();
     }
 
     @Test
     void generateDashboardReport_WithMonth_Success() {
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1, settlement2));
 
         DashboardReportDTO report = reportService.generateDashboardReport(2025, 5);
 
@@ -97,8 +96,8 @@ class ReportServiceTest {
 
     @Test
     void generateDashboardReport_WithoutMonth() {
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1));
 
         DashboardReportDTO report = reportService.generateDashboardReport(2025, null);
 
@@ -113,8 +112,8 @@ class ReportServiceTest {
     void generateRevenueReport_GroupByNone() {
         LocalDate dateFrom = LocalDate.of(2025, 5, 1);
         LocalDate dateTo = LocalDate.of(2025, 5, 31);
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), eq(1L)))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), eq(1L)))
+                .thenReturn(List.of(settlement1, settlement2));
 
         RevenueReportResponseDTO response = reportService.generateRevenueReport(dateFrom, dateTo, 1L, GroupBy.NONE);
 
@@ -123,7 +122,6 @@ class ReportServiceTest {
         assertEquals(GroupBy.NONE, response.groupBy());
         assertEquals(new BigDecimal("500.00"), response.totals().revenue());
         assertEquals(50L, response.rows().get(0).shiftId());
-        assertEquals(ShiftEntryCategory.REGULAR, response.rows().get(0).entryCategory());
         assertEquals(LocalDate.of(2025, 5, 10), response.rows().get(0).date());
     }
 
@@ -131,8 +129,8 @@ class ReportServiceTest {
     void generateRevenueReport_GroupByDay() {
         LocalDate dateFrom = LocalDate.of(2025, 5, 1);
         LocalDate dateTo = LocalDate.of(2025, 5, 31);
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1, settlement2));
 
         RevenueReportResponseDTO response = reportService.generateRevenueReport(dateFrom, dateTo, null, GroupBy.DAY);
 
@@ -145,8 +143,8 @@ class ReportServiceTest {
     void generateRevenueReport_GroupByMonth() {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 12, 31);
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1, settlement2));
 
         RevenueReportResponseDTO response = reportService.generateRevenueReport(dateFrom, dateTo, null, GroupBy.MONTH);
 
@@ -159,8 +157,8 @@ class ReportServiceTest {
     void generateRevenueReport_GroupByYear() {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 12, 31);
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1, settlement2));
 
         RevenueReportResponseDTO response = reportService.generateRevenueReport(dateFrom, dateTo, null, GroupBy.YEAR);
 
@@ -173,8 +171,8 @@ class ReportServiceTest {
     void generateRevenueReport_GroupByDriver() {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 12, 31);
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1, settlement2));
 
         RevenueReportResponseDTO response = reportService.generateRevenueReport(dateFrom, dateTo, null, GroupBy.DRIVER);
 
@@ -187,8 +185,8 @@ class ReportServiceTest {
     void generateRevenueReport_GroupByCar() {
         LocalDate dateFrom = LocalDate.of(2025, 1, 1);
         LocalDate dateTo = LocalDate.of(2025, 12, 31);
-        when(shiftRevenueEntryRepository.findRevenuesForReport(any(), any(), isNull()))
-                .thenReturn(List.of(revenueEntry1, revenueEntry2));
+        when(shiftSettlementRepository.findSettlementsForReport(any(), any(), isNull()))
+                .thenReturn(List.of(settlement1, settlement2));
 
         RevenueReportResponseDTO response = reportService.generateRevenueReport(dateFrom, dateTo, null, GroupBy.CAR);
 

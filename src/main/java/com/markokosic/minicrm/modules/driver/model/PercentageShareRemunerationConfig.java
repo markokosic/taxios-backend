@@ -5,9 +5,7 @@ import com.markokosic.minicrm.modules.driver.dto.request.CreateRemunerationReque
 import com.markokosic.minicrm.modules.remuneration.PercentageRemunerationCalculator;
 import com.markokosic.minicrm.modules.remuneration.RemunerationModelType;
 import com.markokosic.minicrm.modules.remuneration.RemunerationSplit;
-import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.Getter;
@@ -18,17 +16,19 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @Setter
+@Table(name = "remuneration_percentage_configs")
+@PrimaryKeyJoinColumn(name = "id")
 @DiscriminatorValue("PERCENTAGE_SHARE")
 public class PercentageShareRemunerationConfig extends DriverRemunerationConfig {
 
 	@DecimalMin(value = "0.0", inclusive = true, message = "{driver.driverRevenueSharePercentage.invalid}")
-	@DecimalMax(value = "100.0", message = "{driver.driverRevenueSharePercentage.invalid}")
-	@Column(name="driver_revenue_share_percentage", precision = 19, scale = 2)
+	@DecimalMax(value = "1.0", message = "{driver.driverRevenueSharePercentage.invalid}")
+	@Column(name="driver_revenue_share_percentage", nullable = false, precision = 5, scale = 4)
 	private BigDecimal driverRevenueSharePercentage;
 
 	@DecimalMin(value = "0.0", message = "{driver.minDriverPayout.negative}")
-	@Column(name="driver_min_payout", precision = 19, scale = 2)
-	private BigDecimal minDriverPayout;
+	@Column(name="min_driver_payout_per_shift", precision = 19, scale = 2)
+	private BigDecimal minDriverPayoutPerShift;
 
 	@Override
 	public RemunerationModelType getType() {
@@ -36,12 +36,13 @@ public class PercentageShareRemunerationConfig extends DriverRemunerationConfig 
 	}
 
 	@Override
-	public boolean isIdenticalTo(CreateRemunerationRequestDTO dto) {
-		if (!(dto instanceof CreatePercentageShareRemunerationConfigDTO pDto)) {
+	public boolean isIdenticalTo(DriverRemunerationConfig other) {
+		if (!(other instanceof PercentageShareRemunerationConfig pOther)) {
 			return false;
 		}
-		return areEqual(this.driverRevenueSharePercentage, pDto.driverRevenueSharePercentage())
-				&& areEqual(this.minDriverPayout, pDto.minDriverPayout());
+		
+		return areEqual(this.driverRevenueSharePercentage, pOther.getDriverRevenueSharePercentage())
+				&& areEqual(this.minDriverPayoutPerShift, pOther.getMinDriverPayoutPerShift());
 	}
 
 

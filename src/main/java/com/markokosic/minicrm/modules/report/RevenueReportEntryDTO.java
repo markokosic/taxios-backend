@@ -1,6 +1,6 @@
 package com.markokosic.minicrm.modules.report;
 
-import com.markokosic.minicrm.modules.shift.ShiftEntryCategory;
+import com.markokosic.minicrm.modules.shift.model.ShiftEntryCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
