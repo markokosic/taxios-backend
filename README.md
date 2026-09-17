@@ -1,17 +1,19 @@
-# TaxiOS Backend API
+# TaxiOS Backend (REST API)
 
-Multi-tenant backend platform for managing taxi fleets, shift revenues, driver remuneration models, and financial reports.
+> **Origin Story:** TaxiOS was born out of a real-world business need: eliminating the administrative pain of manually entering hundreds of paper shift slips into Excel each month. What started as a digitization initiative for a local taxi company has evolved into a production-ready, multi-tenant platform. Today, it actively manages daily operations for a primary tenant with 10+ drivers, fully automating revenue tracking, contract remuneration, and financial reporting. The platform is currently being expanded to include comprehensive fleet management, automated shift scheduling, and detailed cost analytics.
 
-### 🚀 Live Stage Environment & API Documentation
+### Live Stage Environment & API Documentation
 
-| Resource | Link |
-| :--- | :--- |
-| 🛠️ **Swagger API Docs** | [Open Interactive Swagger UI](https://taxi-stage.mk0.me/api/swagger-ui/index.html#/) |
-| 🌐 **Stage Environment** | [https://taxi-stage.mk0.me](https://taxi-stage.mk0.me) |
+| Resource              | Link                                                                                              |
+| :-------------------- | :------------------------------------------------------------------------------------------------ |
+| **Swagger API Docs**  | [https://taxi-stage.mk0.me/api/swagger-ui](https://taxi-stage.mk0.me/api/swagger-ui/index.html#/) |
+| **Stage Environment** | [https://taxi-stage.mk0.me](https://taxi-stage.mk0.me)                                            |
 
 > **Demo Credentials**
-> - **Email:** `test@tenant.com`
-> - **Password:** `TestTenant123`
+> - **Admin:** `test-account@example.com` / `TestAccount246#`
+> - **Driver:** `lukas.gruber@example.com` / `12341234`
+
+<br/>
 
 **Repositories:**  
 - **Backend:** https://github.com/markokosic/taxios-backend  
@@ -21,63 +23,45 @@ Multi-tenant backend platform for managing taxi fleets, shift revenues, driver r
 
 ## Table of Contents
 
-- [Business Problem & Solution](#business-problem--solution)
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
 - [System Architecture & Data Flow](#system-architecture--data-flow)
-- [Engineering Highlights](#engineering-highlights)
-- [Key Architectural Decisions & Trade-offs](#key-architectural-decisions--trade-offs)
+- [Engineering Decisions & Highlights](#engineering-decisions--highlights)
+- [Feature Backlog](#feature-backlog)
 - [Quickstart & Development](#quickstart--development)
 - [API Documentation & HTTP Testing](#api-documentation--http-testing)
-- [Feature Backlog](#feature-backlog)
-
----
-
-## Business Problem & Solution
-
-Operating a taxi fleet involves daily bookkeeping, handling multiple payment methods (cash, card, tips), managing different driver contract models, and tracking vehicle costs across multi-tenant environments.
-
-1. **Revenue Tracking & Driver/Company Payout Splits**
-   - *Problem:* Drivers operate under varied contract models (percentage split, weekly fixed fee, daily flat rate). Manual calculation of driver payouts and company retention in spreadsheets is time-consuming and error-prone.
-   - *Solution:* Daily shift revenue logging (cash, card, trips). The backend automatically calculates cent-accurate driver payouts and net company shares using dynamic, versioned remuneration calculation strategies.
-
-2. **Fleet & Driver Management**
-   - *Problem:* Vehicle operating costs and driver expenses are often bundled together, making cost allocation and shift tracking unclear.
-   - *Solution:* Clear domain separation of vehicle assets (`Car`) and human resources (`Driver`) for shift and cost assignment.
-
-3. **Financial Reporting & Multi-Tenant Data Isolation**
-   - *Problem:* Lack of clear insights into monthly or yearly revenue trends, car/driver performance, and isolated multi-tenant data management.
-   - *Solution:* Dynamic reporting over customizable date ranges with multi-dimensional grouping by `DRIVER`, `CAR`, or `DATE`, backed by strict database-level row isolation via `@TenantId`.
 
 ---
 
 ## Core Features
 
-### Revenue Tracking & Shift Management
-- **Shift Revenue Logging:** Single and bulk entry of daily shift earnings (cash, card, tips), mileage (`kilometersDriven`), trip count, and shift timeframes (`drivenFrom` to `drivenTo`).
-- **Automated Payout Split (Strategy Pattern):** Instantly calculates driver payout vs. net company share according to active contract rules.
+### 1. Complex Revenue & Shift Tracking
+_Context: The traditional paper shift-slip process is highly prone to manual calculation errors and data loss._
+- **Granular Shift Logging:** REST endpoints for daily shift earnings (cash, card, tips), precise odometer readings (`kilometersDriven`), and timeframes.
+- **Multi-Stage Approval Workflow:** Shifts traverse a strict lifecycle state machine. Submitted shifts undergo control stages to prevent data entry errors before they are officially accepted and finalized.
+- **Data Versioning & Audit Trail:** All shift entries and core entities are strictly versioned to maintain a tamper-proof, immutable history for accounting compliance.
 
-### Driver & Contract Management
-- **Driver Profiles:** Manage driver contact details and operational statuses (`ACTIVE`, `INACTIVE`).
-- **Remuneration Models:**
-  - **Percentage Share (`PERCENTAGE_SHARE`):** Configurable driver percentage (e.g. 60%) with optional minimum guaranteed payout (`minDriverPayout`).
-  - **Weekly Fixed Rate (`WEEKLY_FIXED_RATE`):** Fixed weekly company fee + designated settlement day (1–7).
-  - **Flat Rate (`FLAT_RATE`):** Fixed daily shift fee.
-- **Contract Versioning:** Remuneration agreements include `validFrom` and `validUntil` date ranges, preserving historical financial split accuracy even after contract updates.
+### 2. Dynamic Driver Remuneration Engine
+_Context: Taxi drivers operate under vastly different contract models, making manual payroll a nightmare._
+- **Automated Payout Splits (Strategy Pattern):** The backend dynamically routes calculations through the `IRemunerationCalculator` interface to instantly resolve driver payouts vs. net company retention.
+- **Polymorphic Contracts:** Seamlessly computes limits and minimums for `PERCENTAGE_SHARE`, `WEEKLY_FIXED_RATE`, and `FLAT_RATE` models.
+- **Time-bound Contract Versioning:** Contracts use `validFrom` and `validUntil` date bounds, ensuring historical shifts are always recalculated against the exact contract rules active at the time.
 
-### Fleet Asset Management
-- **Vehicle Inventory:** License plate, make, model, model year, VIN, horsepower, and status (`ACTIVE`, `MAINTENANCE`, `INACTIVE`).
-- **Shift Linkage:** Dynamic assignment of vehicles to driver shifts during daily revenue entry.
+### 3. Security & Multi-Tenancy
+_Context: Taxi fleets need multiple administrative and operational users without compromising data isolation._
+- **Strict Data Isolation (Row-Level):** Transparent multi-tenant query filtering via Hibernate `@TenantId` ensures each taxi company operates in a completely isolated workspace on a shared database.
+- **Atomic Tenant Registration:** Simultaneous creation of a new `Tenant` and its initial admin `User` is executed within a single ACID transaction to prevent partial data states.
+- **Stateless JWT Authentication:** Secure, role-based HTTP-only session management.
 
-### Security & Multi-Tenancy
-- **Atomic Tenant Registration:** Simultaneous creation of a new `Tenant` and initial `User` in a single atomic database transaction.
-- **Stateless JWT Authentication:** Secure token-based access control with HTTP-only session management.
-- **Automated Row-Level Isolation:** Transparent multi-tenant query filtering via Hibernate `@TenantId`.
+### 4. Fleet Asset Management
+_Context: Vehicle operating costs and shift tracking must be clearly linked to identify unprofitable assets._
+- **Vehicle Inventory:** Centralized registry of license plates, VINs, horsepower, and operational statuses (`ACTIVE`, `MAINTENANCE`).
+- **Shift Linkage:** Vehicles are assigned to shifts by ID to accurately track "revenue per car".
 
-### Reports & Analytics
-- **Dashboard Summary:** Overview of total gross revenue, company share, driver payouts, and active vehicle count for the current month and year.
-- **Filterable Reports:** Generate financial reports filtered by date range (`dateFrom` to `dateTo`), specific drivers, or vehicles.
-- **Multi-Dimensional Grouping:** Group report data dynamically by `DRIVER`, `CAR`, or `DATE`.
+### 5. Financial Analytics & Reporting
+_Context: Fleets need to identify month-over-month growth and profitable entities at a glance._
+- **Multi-Dimensional Grouping:** Generate financial reports dynamically grouped by `DRIVER`, `CAR`, or `DATE`.
+- **Dashboard KPIs:** Real-time, anti-N+1 optimized queries to aggregate total gross revenue, company share, driver payouts, and active vehicle count for current and past periods.
 
 ---
 
@@ -93,6 +77,7 @@ Operating a taxi fleet involves daily bookkeeping, handling multiple payment met
 | **DTO Mapping** | MapStruct | `1.5.5` | Compile-time bean mapping between Entities and DTOs |
 | **Boilerplate Reduction** | Lombok | `Latest` | Annotation-based getters, setters, and builders |
 | **API Specification** | Springdoc OpenAPI | `2.8.15` | Automated OpenAPI 3.0 spec generation for Frontend codegen |
+| **Testing & Coverage** | JUnit 5, Mockito & JaCoCo | `0.8.12` | Unit/Integration testing with automated coverage reporting |
 | **Frontend Counterpart** | React 19 / TypeScript | `^19.2.0` | Consumes OpenAPI spec via Orval for client-side type safety |
 | **CI / CD** | GitHub Actions | `--` | Automated testing, linting, and VPS deployment |
 | **Deployment & Hosting** | Docker, Traefik & VPS | `2.11` | Multi-stage Docker container deployed alongside Nginx frontend |
@@ -101,18 +86,18 @@ Operating a taxi fleet involves daily bookkeeping, handling multiple payment met
 
 ## System Architecture & Data Flow
 
-### Backend Architecture
+### Backend Architecture (Modular Monolith)
 
 ```mermaid
 graph TD
-    Client["📱 React Frontend / Client"] -->|HTTP REST + JWT| SecurityFilter["🔒 Spring Security Filter Chain"]
+    Client["React Frontend / Client"] -->|HTTP REST + JWT| SecurityFilter["Spring Security Filter Chain"]
     
     subgraph "Spring Boot Backend Application"
-        SecurityFilter --> JwtAuth["🔑 JwtFilter & SecurityContext"]
-        JwtAuth --> TenantResolver["🏢 TenantContextHolder / IdentifierResolver"]
-        TenantResolver --> ControllerLayer["🎮 REST Controller Layer"]
+        SecurityFilter --> JwtAuth["JwtFilter & SecurityContext"]
+        JwtAuth --> TenantResolver["TenantContextHolder / IdentifierResolver"]
+        TenantResolver --> ControllerLayer["REST Controller Layer"]
         
-        ControllerLayer --> ServiceLayer["⚙️ Business Service Layer"]
+        ControllerLayer --> ServiceLayer["Business Service Layer"]
         
         subgraph "Remuneration Engine (Strategy Pattern)"
             ServiceLayer --> CalcStrategy{"IRemunerationCalculator"}
@@ -121,13 +106,13 @@ graph TD
             CalcStrategy --> WeeklyCalc["Weekly Fixed Calculator"]
         end
         
-        ServiceLayer --> Mapper["🗺️ MapStruct DTO Mapper"]
-        ServiceLayer --> RepoLayer["📦 Spring Data JPA Repositories"]
+        ServiceLayer --> Mapper["MapStruct DTO Mapper"]
+        ServiceLayer --> RepoLayer["Spring Data JPA Repositories"]
     end
     
     subgraph "Data & Storage Layer"
-        RepoLayer -->|"@TenantId Filtered Queries"| PostgresDB[("🐘 PostgreSQL Database")]
-        Liquibase["📜 Liquibase Migrations"] -->|Schema Updates| PostgresDB
+        RepoLayer -->|"@TenantId Filtered Queries"| PostgresDB[("PostgreSQL Database")]
+        Liquibase["Liquibase Migrations"] -->|Schema Updates| PostgresDB
     end
 ```
 
@@ -138,12 +123,23 @@ erDiagram
     TENANTS ||--o{ USERS : "owns"
     TENANTS ||--o{ DRIVERS : "owns"
     TENANTS ||--o{ CARS : "owns"
-    TENANTS ||--o{ DAILY_REVENUE : "owns"
+    TENANTS ||--o{ SHIFTS : "owns"
+    TENANTS ||--o{ FLAT_RATE_TYPES : "owns"
     
     DRIVERS ||--o{ DRIVER_REMUNERATION_CONFIGS : "has configs"
-    DRIVERS ||--o{ DAILY_REVENUE : "generates"
-    CARS ||--o{ DAILY_REVENUE : "used in"
-    DRIVER_REMUNERATION_CONFIGS ||--o{ DAILY_REVENUE : "applied to"
+    
+    DRIVER_REMUNERATION_CONFIGS ||--o| REMUNERATION_PERCENTAGE_CONFIGS : "extends"
+    DRIVER_REMUNERATION_CONFIGS ||--o| REMUNERATION_FLAT_RATE_CONFIGS : "extends"
+    DRIVER_REMUNERATION_CONFIGS ||--o| REMUNERATION_WEEKLY_RENT_CONFIGS : "extends"
+    
+    FLAT_RATE_TYPES ||--o{ REMUNERATION_FLAT_RATE_CONFIGS : "referenced by"
+
+    SHIFTS ||--o{ SHIFT_REVENUE_ENTRIES : "contains"
+    FLAT_RATE_TYPES ||--o{ SHIFT_REVENUE_ENTRIES : "defines"
+    SHIFTS ||--o| SHIFT_SETTLEMENTS : "has"
+
+    SHIFTS ||--o{ SHIFT_APPLIED_REMUNERATION_CONFIGS : "has"
+    DRIVER_REMUNERATION_CONFIGS ||--o{ SHIFT_APPLIED_REMUNERATION_CONFIGS : "applied to"
 
     TENANTS {
         bigint id PK
@@ -155,7 +151,6 @@ erDiagram
         bigint id PK
         bigint tenant_id FK
         string email
-        string password
         string first_name
         string last_name
     }
@@ -165,8 +160,6 @@ erDiagram
         bigint tenant_id FK
         string first_name
         string last_name
-        string email
-        string phone
         string status
     }
 
@@ -174,11 +167,14 @@ erDiagram
         bigint id PK
         bigint tenant_id FK
         string license_plate
-        string brand
-        string model
-        string horsepower
         string status
-        string type
+    }
+    
+    FLAT_RATE_TYPES {
+        bigint id PK
+        bigint tenant_id FK
+        string name
+        numeric default_price
     }
 
     DRIVER_REMUNERATION_CONFIGS {
@@ -187,66 +183,136 @@ erDiagram
         bigint driver_id FK
         string config_type
         boolean is_current_remuneration
-        date valid_from
-        date valid_until
+    }
+
+    REMUNERATION_PERCENTAGE_CONFIGS {
+        bigint id PK
         numeric driver_revenue_share_percentage
-        numeric driver_min_payout
+        numeric min_driver_payout_per_shift
+    }
+
+    REMUNERATION_FLAT_RATE_CONFIGS {
+        bigint id PK
+        bigint flat_rate_type_id FK
         numeric driver_flat_rate_payout_per_shift
+    }
+
+    REMUNERATION_WEEKLY_RENT_CONFIGS {
+        bigint id PK
         numeric weekly_company_settlement
         int settlement_day
     }
 
-    DAILY_REVENUE {
+    SHIFTS {
         bigint id PK
         bigint tenant_id FK
         bigint driver_id FK
         bigint car_id FK
-        bigint remuneration_version_id FK
-        date date
-        numeric revenue
-        numeric kilometers_driven
+        numeric odometer_start
+        numeric odometer_end
+        timestamp shift_start
+        timestamp shift_end
+        numeric weekly_driver_rent
+    }
+    
+    SHIFT_SETTLEMENTS {
+        bigint id PK
+        bigint shift_id FK
+        numeric total_revenue
         numeric driver_remuneration
         numeric company_remuneration
-        bigint trip_count
-        numeric price_per_trip
-        time driven_from
-        time driven_to
+    }
+    
+    SHIFT_REVENUE_ENTRIES {
+        bigint id PK
+        bigint shift_id FK
+        bigint flat_rate_type_id FK
+        string revenue_type
+        numeric amount
+        int count
+    }
+
+    SHIFT_APPLIED_REMUNERATION_CONFIGS {
+        bigint shift_id FK
+        bigint config_id FK
+    }
+
+    DATABASECHANGELOG {
+        string id PK
+        string author
+        string filename
+    }
+
+    DATABASECHANGELOGLOCK {
+        int id PK
+        boolean locked
     }
 ```
 
 ---
 
-## Engineering Highlights
+## Engineering Decisions & Highlights
 
-1. **Row-Level Multi-Tenancy Architecture (Hibernate `@TenantId`)**
-   Uses a Shared Database, Shared Schema model with a `tenant_id` discriminator column (`docs/adr/0001-database-isolation-strategy.md`). Hibernate `@TenantId` automatically appends `WHERE tenant_id = ?` to all JPA queries, providing strict tenant data isolation without multi-database infrastructure costs.
+Here is a simple overview of the core architectural decisions that drive the backend:
 
-2. **Atomic Tenant Registration & Session Handling**
-   To resolve Hibernate session-locking conflicts during tenant signup (`docs/adr/0002-multi-tenancy-registration-atomicity.md`), the signup process executes inside a single atomic transaction utilizing native SQL insertion for initial admin user creation, ensuring ACID guarantees without disabling `open-in-view=false`.
+### 1. Row-Level Multi-Tenancy (Hibernate `@TenantId`)
+- **Implementation:** The system uses a Shared Database, Shared Schema model. Hibernate `@TenantId` automatically appends `WHERE tenant_id = ?` to all JPA queries.
+- **Impact:** Provides strict tenant data isolation while maximizing infrastructure efficiency compared to a database-per-tenant model.
+- **Trade-off:** All database tables must explicitly include a `tenant_id` discriminator column.
 
-3. **Contract-Driven API Integration (`Springdoc OpenAPI` -> `Orval`)**
-   The backend acts as the Single Source of Truth (`docs/adr/0003-openapi-and-frontend-code-generation.md`). Springdoc automatically inspects Spring controllers and DTOs to generate the OpenAPI 3.0 specification (`v3/api-docs`), which the React frontend consumes to generate typed React Query hooks and Zod validation schemas.
+### 2. Strategy Pattern (Remuneration Models)
+- **Implementation:** Revenue split logic is encapsulated behind an `IRemunerationCalculator` interface (e.g., `PercentageRemunerationCalculator`, `FlatRateRemunerationCalculator`).
+- **Impact:** Keeps complex financial calculation logic completely decoupled, highly testable, and compliant with the Open/Closed Principle. 
 
-4. **Strategy Pattern for Dynamic Remuneration Calculation**
-   Revenue split logic is encapsulated behind the `IRemunerationCalculator` interface:
-   - `PercentageRemunerationCalculator`
-   - `FlatRateRemunerationCalculator`
-   - `WeeklyFixedRateRemunerationCalculator`  
-   New contract models can be added cleanly without mutating existing split logic (Open/Closed Principle).
+### 3. Contract-Driven API (`Springdoc OpenAPI`)
+- **Implementation:** The backend acts as the Single Source of Truth. Springdoc inspects Spring controllers and automatically generates an OpenAPI 3.0 specification (`/v3/api-docs`).
+- **Impact:** Generates real-time, zero-drift API specifications that power automatic client generation for the frontend.
+- **Trade-off:** DTOs require explicit OpenAPI annotations to provide detailed schema descriptions.
 
-5. **Cent-Accurate Financial Precision (`BigDecimal`)**
-   All financial values and rates are handled via `java.math.BigDecimal` and stored in PostgreSQL as `numeric(10,2)` or `numeric(38,2)` to avoid IEEE 754 floating-point rounding errors.
+### 4. Cent-Accurate Financial Precision
+- **Implementation:** All financial values and rates are handled via `java.math.BigDecimal` in Java and stored as `numeric(38,2)` in PostgreSQL.
+- **Impact:** Completely eliminates IEEE 754 floating-point rounding errors that can cause financial discrepancies.
+
+### 5. Atomic Tenant Registration
+- **Implementation:** Tenant signup executes inside a single atomic transaction, utilizing native SQL for the initial admin user creation.
+- **Impact:** Resolves Hibernate session-locking conflicts during nested entity creation, ensuring ACID guarantees without disabling `open-in-view=false`.
+
+### 6. Anti-N+1 Query Optimization
+- **Implementation:** The repository layer strictly enforces `@EntityGraph` for joined fetches, supplemented by `@BatchSize` on collections.
+- **Impact:** Prevents classic Hibernate Eager-Fetching issues during complex shift aggregations and reporting.
+
+### 7. Deterministic Migrations (Liquibase)
+- **Implementation:** Database schema evolution is managed via version-controlled Liquibase scripts.
+- **Impact:** Provides deterministic, safe database migrations suitable for production, ensuring critical indexes on `tenant_id` are never missed.
+- **Trade-off:** Requires writing explicit migration scripts instead of relying on automatic JPA schema generation.
 
 ---
 
-## Key Architectural Decisions & Trade-offs
+## Feature Backlog
 
-| Decision | Alternative Considered | Rationale & Impact |
-| :--- | :--- | :--- |
-| **Shared Database + `@TenantId` Row Isolation vs. Database-per-Tenant** | Separate PostgreSQL database or schema per tenant | **Rationale:** Maximizes infrastructure efficiency and simplifies connection pooling, while Hibernate `@TenantId` guarantees strict row-level isolation.<br/>**Trade-off:** All tables must include `tenant_id` discriminator columns. |
-| **Strategy Pattern for Remuneration Models vs. Polymorphic Endpoints / If-Else** | Hardcoded switch statements or separate REST controllers per model | **Rationale:** Keeps financial calculation logic decoupled, testable, and compliant with the Open/Closed Principle. Allows versioned contracts (`validFrom`/`validUntil`) to be evaluated dynamically.<br/>**Trade-off:** Requires implementing dedicated strategy classes per model. |
-| **Contract-First OpenAPI (`Springdoc`) vs. Manual API Documentation** | Handcrafted Swagger YAML or manual Markdown specs | **Rationale:** Generates real-time, zero-drift OpenAPI 3.0 specs directly from Java code & DTO annotations. Powers automatic client generation (`Orval`) for the React frontend.<br/>**Trade-off:** DTOs require explicit OpenAPI annotations for detailed schema descriptions. |
-| **Liquibase Migration Scripts vs. Hibernate `hbm2ddl.auto=update`** | Automatic schema generation by JPA | **Rationale:** Provides deterministic, version-controlled database schema migrations suitable for production multi-tenant environments.<br/>**Trade-off:** Requires writing explicit XML/SQL change-logs for schema updates. |
+- **Shift Planning & Calendar:** Interactive calendar for scheduling upcoming shifts, assigning vehicles, and providing driver-specific views for their upcoming work schedule.
+- **Cost Center Controlling & P&L:** Comprehensive tracking of vehicle expenses (fuel, maintenance, insurance), payroll overhead, and automated Net Income calculation.
+- **Tax & Collective Agreement Compliance:** Robust handling of regional tax brackets, tax-free allowances, and strict adherence to mandatory collective wage agreements (*Kollektivverträge*).
+- **Advanced RBAC (Role-Based Access Control):** Fine-grained permissions and custom roles (e.g., `ADMIN`, `ACCOUNTANT`, `DISPATCHER`, `DRIVER`) for secure fleet management.
+- **Payment Integration:** Automated billing, digital driver payouts, and subscription management via third-party providers (e.g., Stripe, SEPA).
+- **Advanced Analytics & Reporting:** Interactive dashboard KPIs, graphical revenue statistics, and formal PDF/CSV exports (e.g., DATEV) for seamless bookkeeping.
+- **Shift Handover & Telematics:** Odometer tracking, damage reporting, and automated taximeter data ingestion.
+
+---
+
+## API Documentation & HTTP Testing
+
+### Interactive Swagger UI & OpenAPI 3.0
+- **Swagger UI:** `http://localhost:8080/api/swagger-ui.html` (or `/api/swagger-ui/index.html`)
+- **OpenAPI JSON Spec:** `http://localhost:8080/api/v3/api-docs`
+
+### HTTP Request Collection
+The `requests/` directory contains pre-configured HTTP request files for IntelliJ / VS Code REST Client testing:
+- `requests/auth.http` – Tenant registration, login, and JWT token refresh
+- `requests/car.http` – Vehicle CRUD operations and fleet status management
+- `requests/driver.http` – Driver management and remuneration configurations
+- `requests/revenue.http` – Daily revenue logging and bulk entries
+- `requests/report.http` – Dashboard metrics and aggregated financial reports
 
 ---
 
@@ -298,29 +364,3 @@ Backend API will be accessible at `http://localhost:8080`.
 ```
 
 > **Deployment Note:** Production deployment is handled automatically via GitHub Actions CI/CD (`deployment.yaml`) on push to `main` or `stage`, which builds the Spring Boot container and orchestrates it alongside PostgreSQL and Nginx in the root project.
-
----
-
-## API Documentation & HTTP Testing
-
-### Interactive Swagger UI & OpenAPI 3.0
-- **Swagger UI:** `http://localhost:8080/api/swagger-ui.html` (oder `/api/swagger-ui/index.html`)
-- **OpenAPI JSON Spec:** `http://localhost:8080/api/v3/api-docs`
-
-### HTTP Request Collection
-The `requests/` directory contains pre-configured HTTP request files for IntelliJ / VS Code REST Client testing:
-- `requests/auth.http` – Tenant registration, login, and JWT token refresh
-- `requests/car.http` – Vehicle CRUD operations and fleet status management
-- `requests/driver.http` – Driver management and remuneration configurations
-- `requests/revenue.http` – Daily revenue logging and bulk entries
-- `requests/report.http` – Dashboard metrics and aggregated financial reports
-
----
-
-## Feature Backlog
-
-- **Cost Center Controlling (*Kostenstellen-Controlling*):** Vehicle-specific costs (fuel/charging, maintenance, insurance, leasing), driver overhead, and general operational expenses.
-- **Net Operating Income (P&L) & ROI Analytics:** Automated Net Income calculation (Revenue minus Cost Center expenses) and vehicle-level ROI analysis.
-- **Export & Reporting Engine:** Formal PDF shift statements and CSV/Excel exports for bookkeeping (DATEV).
-- **Shift Handover & Telematics:** Odometer/fuel tracking and automated telematics/taximeter data ingestion.
-- **Fine-Grained RBAC:** Expanded user roles (`ADMIN`, `ACCOUNTANT`, `DISPATCHER`, `DRIVER`).

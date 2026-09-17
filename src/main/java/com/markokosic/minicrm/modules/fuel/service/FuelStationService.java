@@ -83,18 +83,18 @@ public class FuelStationService {
 
     private CalculatedCostDto calculateCosts(BigDecimal pricePerLiter, double distanceKm, double tankAmount) {
         // refuelTotal = pricePerLiter * tankAmount
-        BigDecimal refuelTotal = pricePerLiter.multiply(BigDecimal.valueOf(tankAmount));
+        BigDecimal refuelTotal = pricePerLiter.multiply(BigDecimal.valueOf(tankAmount)).setScale(2, RoundingMode.HALF_UP);
         
         // tripCost = distanceKm * 2 * (avg. consumption / 100) * pricePerLiter
         double consumedLiters = (distanceKm * 2) * (DEFAULT_CONSUMPTION_LITERS_PER_100_KM / 100.0);
-        BigDecimal tripCost = pricePerLiter.multiply(BigDecimal.valueOf(consumedLiters));
+        BigDecimal tripCost = pricePerLiter.multiply(BigDecimal.valueOf(consumedLiters)).setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal total = refuelTotal.add(tripCost);
 
         return new CalculatedCostDto(
-                refuelTotal.setScale(2, RoundingMode.HALF_UP),
-                tripCost.setScale(2, RoundingMode.HALF_UP),
-                total.setScale(2, RoundingMode.HALF_UP)
+                refuelTotal,
+                tripCost,
+                total
         );
     }
 
