@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+import org.slf4j.MDC;
 
 
 @RequiredArgsConstructor
@@ -75,12 +76,14 @@ public class JwtFilter extends OncePerRequestFilter {
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                         TenantContextHolder.setTenantId(tenantId);
+                        MDC.put("tenantId", String.valueOf(tenantId));
                     }
                 }
             } catch (ExpiredJwtException | io.jsonwebtoken.security.SignatureException | io.jsonwebtoken.MalformedJwtException e) {
 
                 SecurityContextHolder.clearContext();
                 TenantContextHolder.clear();
+                MDC.remove("tenantId");
 
                 authenticationEntryPoint.commence(
                         request,
@@ -92,6 +95,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.clearContext();
                 TenantContextHolder.clear();
+                MDC.remove("tenantId");
 
 
                 org.springframework.http.ResponseCookie deleteAccess = org.springframework.http.ResponseCookie.from("accessToken", "")
@@ -130,6 +134,7 @@ public class JwtFilter extends OncePerRequestFilter {
         } finally {
 
             TenantContextHolder.clear();
+            MDC.remove("tenantId");
         }
     }
 }
