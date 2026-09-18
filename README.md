@@ -2,6 +2,15 @@
 
 > **Origin Story:** TaxiOS was born out of a real-world business need: eliminating the administrative pain of manually entering hundreds of paper shift slips into Excel each month. What started as a digitization initiative for a local taxi company has evolved into a production-ready, multi-tenant platform. Today, it actively manages daily operations for a primary tenant with 10+ drivers, fully automating revenue tracking, contract remuneration, and financial reporting. The platform is currently being expanded to include comprehensive fleet management, automated shift scheduling, and detailed cost analytics.
 
+### Quick Overview
+- **Multi-Tenant Architecture:** Built with strict row-level data isolation to safely manage multiple independent taxi companies on a single database.
+- **Automated Payroll & Versioning:** Calculates driver remunerations (percentage, fixed, weekly) automatically. Includes time-bound versioning to ensure historical shifts always map to the correct contract.
+- **Financial Analytics:** Optimized queries provide fast dashboard KPIs for revenue and fleet management.
+- **OpenAPI Contracts:** Automated API specification generation (Springdoc) acting as the single source of truth for frontend client generation.
+- **CI/CD Pipeline:** Automated testing, linting, and continuous deployment via GitHub Actions.
+- **Infrastructure & Environments:** Containerized setup hosted on a VPS, using Docker & Traefik to run separate staging and production environments.
+- **Observability:** Integrated JVM metrics with Prometheus and Grafana for system health monitoring.
+
 ### Live Stage Environment & API Documentation
 
 | Resource              | Link                                                                                              |
@@ -12,6 +21,15 @@
 > **Demo Credentials**
 > - **Admin:** `test-account@example.com` / `TestAccount246#`
 > - **Driver:** `lukas.gruber@example.com` / `12341234`
+
+### Live Monitoring
+
+| Resource              | Link                                                             |
+| :-------------------- | :--------------------------------------------------------------- |
+| **Grafana Dashboard** | [https://taxi-monitoring.mk0.me](https://taxi-monitoring.mk0.me) |
+
+> **Demo Credentials**
+> - **Grafana:** `taxiosstageuser` / `12341234`
 
 <br/>
 
@@ -81,6 +99,7 @@ _Context: Fleets need to identify month-over-month growth and profitable entitie
 | **Frontend Counterpart** | React 19 / TypeScript | `^19.2.0` | Consumes OpenAPI spec via Orval for client-side type safety |
 | **CI / CD** | GitHub Actions | `--` | Automated testing, linting, and VPS deployment |
 | **Deployment & Hosting** | Docker, Traefik & VPS | `2.11` | Multi-stage Docker container deployed alongside Nginx frontend |
+| **Observability** | Micrometer & Prometheus | `Latest` | JVM metrics, application health, and telemetry data export |
 
 ---
 
@@ -285,6 +304,10 @@ Here is a simple overview of the core architectural decisions that drive the bac
 - **Implementation:** Database schema evolution is managed via version-controlled Liquibase scripts.
 - **Impact:** Provides deterministic, safe database migrations suitable for production, ensuring critical indexes on `tenant_id` are never missed.
 - **Trade-off:** Requires writing explicit migration scripts instead of relying on automatic JPA schema generation.
+
+### 8. Observability & Monitoring
+- **Implementation:** Spring Boot Actuator coupled with Micrometer exposes an `/actuator/prometheus` endpoint. Metrics are scraped by Prometheus and visualized in a centralized Grafana dashboard.
+- **Impact:** Provides real-time insights into JVM performance, connection pools (HikariCP), and HTTP request latency, enabling proactive fleet monitoring.
 
 ---
 
